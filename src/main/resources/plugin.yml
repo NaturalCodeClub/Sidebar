@@ -4,3 +4,5 @@ main: org.ncc.sidebar.Main
 api-version: '1.21'
 authors: [ NatJerry ]
 folia-supported: true
+softdepend:
+  - PlaceHolderAPI
