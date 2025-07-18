@@ -21,7 +21,7 @@ repositories {
 }
 
 dependencies {
-    val scoreboardLibraryVersion = "2.4.0"
+    val scoreboardLibraryVersion = "2.4.1"
     implementation("net.megavex:scoreboard-library-api:${scoreboardLibraryVersion}")
     runtimeOnly("net.megavex:scoreboard-library-implementation:${scoreboardLibraryVersion}")
     implementation("net.megavex:scoreboard-library-extra-kotlin:${scoreboardLibraryVersion}")
