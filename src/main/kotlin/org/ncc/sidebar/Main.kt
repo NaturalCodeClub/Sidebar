@@ -3,14 +3,13 @@ package org.ncc.sidebar
 import net.megavex.scoreboardlibrary.api.ScoreboardLibrary
 import net.megavex.scoreboardlibrary.api.exception.NoPacketAdapterAvailableException
 import net.megavex.scoreboardlibrary.api.noop.NoopScoreboardLibrary
-import net.megavex.scoreboardlibrary.api.sidebar.Sidebar
 import org.bukkit.Bukkit
 import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
 
 class Main : JavaPlugin(), Listener {
     lateinit var sbLib: ScoreboardLibrary
-    lateinit var sidebar: Sidebar
+//    lateinit var sidebar: Sidebar
     override fun onEnable() {
         try {
             sbLib = ScoreboardLibrary.loadScoreboardLibrary(this)
@@ -20,14 +19,19 @@ class Main : JavaPlugin(), Listener {
         }
         ConfigManager().initConfig()
         ConfigManager().loadConfig(config)
-        sidebar = sbLib.createSidebar()
+        ConfigManager().initData()
+        ConfigManager().loadData()
+        ConfigManager().getSidebar(config, logger)
+
+//        sidebar = sbLib.createSidebar()
 
         Bukkit.getPluginManager().registerEvents(this, this)
 
     }
 
     override fun onDisable() {
-        sidebar.close()
+//        sidebar.close()
+        ConfigManager().closeSidebar()
         sbLib.close()
     }
 

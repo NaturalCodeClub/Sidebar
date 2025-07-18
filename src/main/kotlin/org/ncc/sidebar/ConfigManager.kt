@@ -84,6 +84,12 @@ class ConfigManager {
         }
     }
 
+    fun closeSidebar(){
+        for((str,sidebar) in sidebarMap){
+            sidebar.close()
+        }
+    }
+
     fun initData(){
         if(!dataFile.exists()){
             if(!dataFile.parentFile.exists()){
