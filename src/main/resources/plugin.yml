@@ -6,3 +6,10 @@ authors: [ NatJerry ]
 folia-supported: true
 softdepend:
   - PlaceHolderAPI
+
+commands:
+  sidebar:
+    description: "the command of Sidebar"
+    aliases:
+      - sb
+    usage: "/sidebar [args] [...]"

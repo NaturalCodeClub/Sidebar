@@ -7,25 +7,46 @@ import org.bukkit.Bukkit
 import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
 
+
 class Main : JavaPlugin(), Listener {
-    lateinit var sbLib: ScoreboardLibrary
+//    lateinit var sbLib: ScoreboardLibrary
+//    lateinit var configManager: ConfigManager
+
+    companion object{
+        var instance: Main = null!!
+        var configManager: ConfigManager = null!!
+        var sbLib: ScoreboardLibrary = null!!
+
+        fun getScoreboardLibrary(): ScoreboardLibrary{
+            return sbLib
+        }
+        fun getConfigManager(): ConfigManager{
+            return configManager
+        }
+        fun getInstance(): Main{
+            return instance
+        }
+    }
 //    lateinit var sidebar: Sidebar
     override fun onEnable() {
+        instance = this
         try {
             sbLib = ScoreboardLibrary.loadScoreboardLibrary(this)
         } catch (e: NoPacketAdapterAvailableException) {
             sbLib = NoopScoreboardLibrary()
             logger.warning("No packet adapter available, falling back to noop library")
         }
-        ConfigManager().initConfig()
-        ConfigManager().loadConfig(config)
-        ConfigManager().initData()
-        ConfigManager().loadData()
-        ConfigManager().getSidebar(config, logger)
+        configManager = ConfigManager()
+        configManager.initConfig()
+        configManager.loadConfig()
+        configManager.initData()
+        configManager.loadData()
+        configManager.getSidebar(config, logger)
 
 //        sidebar = sbLib.createSidebar()
 
-        Bukkit.getPluginManager().registerEvents(this, this)
+        Bukkit.getPluginManager().registerEvents(EventManager(), this)
+        Bukkit.getPluginCommand("sidebar")?.setExecutor(Command())
 
     }
 
@@ -35,9 +56,6 @@ class Main : JavaPlugin(), Listener {
         sbLib.close()
     }
 
-    fun getInstance(): JavaPlugin {
-        return this
-    }
 
 
 }
