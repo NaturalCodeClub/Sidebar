@@ -12,6 +12,7 @@ import java.util.logging.Logger
 
 class ConfigManager {
     val gson = Gson()
+
     lateinit var config: FileConfiguration
     val configFile: File = File(Main.instance.dataFolder, "config.yml")
     val defaultSideBarLineConfig = listOf(
@@ -21,7 +22,23 @@ class ConfigManager {
         "<red>只支持</red><gray>MiniMessage</gray><red>格式</red>"
     )
     val defaultSideBarUpdateInterval = 10
-    var defaultSelection: String = "default"
+    var defaultSidebarSelection: String = "default"
+
+    val animationFile: File = File(Main.instance.dataFolder, "animation.yml")
+    lateinit var animationConfig: FileConfiguration
+    lateinit var animationSection: ConfigurationSection
+    val defaultAnimationLines = listOf(
+        "<gradient:#0091FF:#F13ABC><bold>Default Animation</bold></gradient>",
+        "<gradient:#40AFFF:#FF80E0><bold>Default Animation</bold></gradient>",
+        "<gradient:#0091FF:#F13ABC><bold>Default Animation</bold></gradient>",
+        "<gradient:#40AFFF:#FF80E0><bold>Default Animation</bold></gradient>",
+        "<gradient:#0091FF:#F13ABC><bold>Default Animation</bold></gradient>",
+        "<gradient:#40AFFF:#FF80E0><bold>Default Animation</bold></gradient>",
+        "<gradient:#0091FF:#F13ABC><bold>Default Animation</bold></gradient>",
+        "<gradient:#40AFFF:#FF80E0><bold>Default Animation</bold></gradient>",
+        "<gradient:#0091FF:#F13ABC><bold>Default Animation</bold></gradient>"
+    )
+    val defaultAnimationUpdateIntervalMs = 200
 
     val dataFile: File = File(Main.instance.dataFolder, "data.json")
 
@@ -36,22 +53,22 @@ class ConfigManager {
 
     lateinit var sidebarSection: ConfigurationSection
     fun initConfig() {
-        var b = false
+        var isConfigModified = false
+        var isAnimationModified = false
+
         if (!configFile.exists()) {
-            if (!configFile.parentFile.exists()) {
-                configFile.parentFile.mkdirs()
-            }
+            configFile.parentFile.mkdirs()
             configFile.createNewFile()
-            b = true
+            isConfigModified = true
         }
         val tempConf: FileConfiguration = YamlConfiguration.loadConfiguration(configFile)
         if (tempConf.get("data.save-interval") == null) {
             tempConf.set("data.save-interval", dataSaveInterval)
-            b = true
+            isConfigModified = true
         }
         if (tempConf.get("first-join.defaultsidebar") == null) {
-            tempConf.set("first-join.defaultsidebar", defaultSelection)
-            b = true
+            tempConf.set("first-join.defaultsidebar", defaultSidebarSelection)
+            isConfigModified = true
         }
         if (tempConf.get("sidebar") == null) {
             tempConf.set("sidebar.default.description", "<white>一个默认的Sidebar</white>")
@@ -59,17 +76,32 @@ class ConfigManager {
             tempConf.set("sidebar.default.lines", defaultSideBarLineConfig)
             tempConf.set("sidebar.default.update-interval", defaultSideBarUpdateInterval)
             tempConf.setComments("sidebar.default.update-interval", listOf("单位 毫秒"))
-            b = true
+            isConfigModified = true
         }
-        if (b) {
+        if (isConfigModified) {
             tempConf.save(configFile)
+        }
+
+        if (!animationFile.exists()) {
+            animationFile.parentFile.mkdirs()
+            animationFile.createNewFile()
+            isAnimationModified = true
+        }
+        val tempAniConf: FileConfiguration = YamlConfiguration.loadConfiguration(animationFile)
+        if(tempAniConf.get("animation")==null){
+            tempAniConf.set("animation.default.lines",defaultAnimationLines)
+            tempAniConf.set("animation.default.update-interval-ms",defaultAnimationUpdateIntervalMs)
+            isAnimationModified = true
+        }
+        if(isAnimationModified){
+            tempAniConf.save(animationFile)
         }
 
     }
 
     fun loadConfig() {
         config = YamlConfiguration.loadConfiguration(configFile)
-        defaultSelection = config.getString("first-join.defaultsidebar")?: defaultSelection
+        defaultSidebarSelection = config.getString("first-join.defaultsidebar") ?: defaultSidebarSelection
     }
 
     fun reloadConfig() {
@@ -94,6 +126,7 @@ class ConfigManager {
             }
             var i = 0
             val tempSidebar = Main.sbLib.createSidebar()
+            tempSidebar.title(MiniMessage.miniMessage().deserialize(title))
             for (str in line) {
                 if (i > 14) break
                 tempSidebar.line(i, MiniMessage.miniMessage().deserialize(str))
@@ -105,7 +138,7 @@ class ConfigManager {
     }
 
     fun getPlayerSidebar(player: Player): Sidebar {
-        if (!playerNameSidebarNameMap.containsKey(player.name)) return sidebarMap[defaultSelection]!!
+        if (!playerNameSidebarNameMap.containsKey(player.name)) return sidebarMap[defaultSidebarSelection]!!
         return sidebarMap[playerNameSidebarNameMap[player.name]]!!
     }
 
