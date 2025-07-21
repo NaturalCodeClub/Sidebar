@@ -14,42 +14,59 @@ class Command : TabExecutor {
         "<color:#55cdfc>/sidebar toggle</color> <gray>-</gray> <color:#f5abb9>开启或关闭Sidebar</color>",
         "<color:#55cdfc>/sidebar switch</color> <color:#aaa9a1><sidebar></color> <gray>-</gray> <color:#f5abb9>切换Sidebar</color>"
     )
+
     override fun onCommand(sender: CommandSender, p1: Command, str: String, array: Array<out String>): Boolean {
-        if(array[0] == "reload"){
-            Main.configManager.reloadConfig()
-            sender.sendMessage("重载 config.yml 成功")
-        }
-        if(array[0]== "toggle"){
-            if(sender !is Player) {
-                sender.sendMessage("你不是玩家")
+        when (array[0]) {
+            "reload" -> {
+                Main.configManager.reloadConfig()
+                sender.sendMessage("重载 config.yml 成功")
                 return true
             }
-            Main.configManager.playerState[sender as Player] = !Main.configManager.playerState[sender]!!
-            if(Main.configManager.playerState[sender]!!) {
-                sender.sendMessage("Sidebar 调整为 开 ")
-                return true
+
+            "toggle" -> {
+                if (sender !is Player) {
+                    sender.sendMessage("你不是玩家")
+                    return true
+                }
+                Main.configManager.playerState[sender as Player] = !Main.configManager.playerState[sender]!!
+                if (Main.configManager.playerState[sender]!!) {
+                    sender.sendMessage("Sidebar 调整为 开 ")
+                    return true
+                } else {
+                    sender.sendMessage("Sidebar 调整为 关 ")
+                    return true
+                }
             }
-            sender.sendMessage("Sidebar 调整为 关 ")
-            return true
-        }
-        if(array[0] == "switch"){
-            if(array.size < 2) {
-                sender.sendMessage("格式错误")
+
+            "switch" -> {
+                if (array.size < 2) {
+                    sender.sendMessage("格式错误")
+                    sender.sendMessage(helpList.joinToString("\n"))
+                    return true
+                }
+                if (array[1] !in Main.configManager.sidebarMap.keys) {
+                    sender.sendMessage("你所指定的Sidebar不存在")
+                    return true
+                }
+                Main.configManager.playerNameSidebarNameMap[sender.name] = array[1]
+                Main.configManager.sidebarMap[array[1]]!!.addPlayer(sender as Player)
+            }
+
+            else -> {
                 sender.sendMessage(helpList.joinToString("\n"))
                 return true
             }
-            //TODO ..
         }
         return true
     }
 
     override fun onTabComplete(p0: CommandSender, p1: Command, p2: String, array: Array<out String>): List<String?>? {
-        if(array.size == 1) {
-            return listOf("reload","help","toggle","switch")
+        if (array.size == 1) {
+            return listOf("reload", "help", "toggle", "switch")
         }
-        if(array.size == 2&&array[0] == "switch") {
+        if (array.size == 2 && array[0] == "switch") {
             val list = mutableListOf<String>()
-            for(str in Main.configManager.sidebarMap.keys) {
+            for (str in Main.configManager.sidebarMap.keys) {
                 list.add(str)
             }
             return list

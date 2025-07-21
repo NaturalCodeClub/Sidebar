@@ -29,7 +29,6 @@ class ConfigManager {
     val descriptionMap = mutableMapOf<String, String>()
 
     //TODO complete it
-    val playerSidebarMap = mutableMapOf<Player, Sidebar>()
     var playerNameSidebarNameMap = mutableMapOf<String, String>()
     val playerState = mutableMapOf<Player, Boolean>()
 
@@ -107,7 +106,7 @@ class ConfigManager {
 
     fun getPlayerSidebar(player: Player): Sidebar {
         if (!playerNameSidebarNameMap.containsKey(player.name)) return sidebarMap[defaultSelection]!!
-        return sidebarMap.get(playerNameSidebarNameMap[player.name])!!
+        return sidebarMap[playerNameSidebarNameMap[player.name]]!!
     }
 
     fun closeSidebar() {
