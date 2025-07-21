@@ -17,15 +17,15 @@ class Main : JavaPlugin(), Listener {
         var configManager: ConfigManager = null!!
         var sbLib: ScoreboardLibrary = null!!
 
-        fun getScoreboardLibrary(): ScoreboardLibrary{
-            return sbLib
-        }
-        fun getConfigManager(): ConfigManager{
-            return configManager
-        }
-        fun getInstance(): Main{
-            return instance
-        }
+//        fun getScoreboardLibrary(): ScoreboardLibrary{
+//            return sbLib
+//        }
+//        fun getConfigManager(): ConfigManager{
+//            return configManager
+//        }
+//        fun getInstance(): Main{
+//            return instance
+//        }
     }
 //    lateinit var sidebar: Sidebar
     override fun onEnable() {
