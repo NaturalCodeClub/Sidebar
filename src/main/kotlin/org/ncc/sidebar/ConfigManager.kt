@@ -14,7 +14,7 @@ class ConfigManager {
     val gson = Gson()
 
     lateinit var config: FileConfiguration
-    val configFile: File = File(Main.instance.dataFolder, "config.yml")
+    val configFile: File = File(Main.instance!!.dataFolder, "config.yml")
     val defaultSideBarLineConfig = listOf(
         "<green>最高支持</green><gray>15</gray><green>行</green>",
         "<yellow>每行支持</yellow><gray>42</gray><yellow>个字符</yellow>",
@@ -24,7 +24,7 @@ class ConfigManager {
     val defaultSideBarUpdateInterval = 10
     var defaultSidebarSelection: String = "default"
 
-    val animationFile: File = File(Main.instance.dataFolder, "animation.yml")
+    val animationFile: File = File(Main.instance!!.dataFolder, "animation.yml")
     lateinit var animationConfig: FileConfiguration
     lateinit var animationSection: ConfigurationSection
     val defaultAnimationLines = listOf(
@@ -40,7 +40,7 @@ class ConfigManager {
     )
     val defaultAnimationUpdateIntervalMs = 200
 
-    val dataFile: File = File(Main.instance.dataFolder, "data.json")
+    val dataFile: File = File(Main.instance!!.dataFolder, "data.json")
 
     val sidebarMap = mutableMapOf<String, Sidebar>()
     val descriptionMap = mutableMapOf<String, String>()
@@ -107,6 +107,7 @@ class ConfigManager {
     fun reloadConfig() {
         initConfig()
         loadConfig()
+        getSidebar(config, Main.instance!!.logger)
     }
 
     fun getSidebar(conf: FileConfiguration, log: Logger) {
@@ -125,7 +126,7 @@ class ConfigManager {
                 log.warning("Sidebar $key line is too long, max length is 15, current length is ${line.size}")
             }
             var i = 0
-            val tempSidebar = Main.sbLib.createSidebar()
+            val tempSidebar = Main.sbLib!!.createSidebar()
             tempSidebar.title(MiniMessage.miniMessage().deserialize(title))
             for (str in line) {
                 if (i > 14) break

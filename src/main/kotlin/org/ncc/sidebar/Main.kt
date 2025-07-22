@@ -13,9 +13,9 @@ class Main : JavaPlugin(), Listener {
 //    lateinit var configManager: ConfigManager
 
     companion object{
-        var instance: Main = null!!
-        var configManager: ConfigManager = null!!
-        var sbLib: ScoreboardLibrary = null!!
+        var instance: JavaPlugin? = null
+        var configManager: ConfigManager? = null
+        var sbLib: ScoreboardLibrary? = null
 
 //        fun getScoreboardLibrary(): ScoreboardLibrary{
 //            return sbLib
@@ -37,11 +37,11 @@ class Main : JavaPlugin(), Listener {
             logger.warning("No packet adapter available, falling back to noop library")
         }
         configManager = ConfigManager()
-        configManager.initConfig()
-        configManager.loadConfig()
-        configManager.initData()
-        configManager.loadData()
-        configManager.getSidebar(config, logger)
+        configManager!!.initConfig()
+        configManager!!.loadConfig()
+        configManager!!.initData()
+        configManager!!.loadData()
+        configManager!!.getSidebar(config, logger)
 
 //        sidebar = sbLib.createSidebar()
 
@@ -53,7 +53,7 @@ class Main : JavaPlugin(), Listener {
     override fun onDisable() {
 //        sidebar.close()
         ConfigManager().closeSidebar()
-        sbLib.close()
+        sbLib!!.close()
     }
 
 

@@ -1,5 +1,6 @@
 package org.ncc.sidebar
 
+import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.command.TabExecutor
@@ -16,9 +17,13 @@ class Command : TabExecutor {
     )
 
     override fun onCommand(sender: CommandSender, p1: Command, str: String, array: Array<out String>): Boolean {
+        if(array.isEmpty()) {
+            sender.sendMessage(MiniMessage.miniMessage().deserialize(helpList.joinToString("\n")))
+            return true
+        }
         when (array[0]) {
             "reload" -> {
-                Main.configManager.reloadConfig()
+                Main.configManager!!.reloadConfig()
                 sender.sendMessage("重载 config.yml 成功")
                 return true
             }
@@ -28,8 +33,8 @@ class Command : TabExecutor {
                     sender.sendMessage("你不是玩家")
                     return true
                 }
-                Main.configManager.playerState[sender as Player] = !Main.configManager.playerState[sender]!!
-                if (Main.configManager.playerState[sender]!!) {
+                Main.configManager!!.playerState[sender as Player] = !Main.configManager!!.playerState[sender]!!
+                if (Main.configManager!!.playerState[sender]!!) {
                     sender.sendMessage("Sidebar 调整为 开 ")
                     return true
                 } else {
@@ -41,19 +46,19 @@ class Command : TabExecutor {
             "switch" -> {
                 if (array.size < 2) {
                     sender.sendMessage("格式错误")
-                    sender.sendMessage(helpList.joinToString("\n"))
+                    sender.sendMessage(MiniMessage.miniMessage().deserialize(helpList.joinToString("\n")))
                     return true
                 }
-                if (array[1] !in Main.configManager.sidebarMap.keys) {
+                if (array[1] !in Main.configManager!!.sidebarMap.keys) {
                     sender.sendMessage("你所指定的Sidebar不存在")
                     return true
                 }
-                Main.configManager.playerNameSidebarNameMap[sender.name] = array[1]
-                Main.configManager.sidebarMap[array[1]]!!.addPlayer(sender as Player)
+                Main.configManager!!.playerNameSidebarNameMap[sender.name] = array[1]
+                Main.configManager!!.sidebarMap[array[1]]!!.addPlayer(sender as Player)
             }
 
             else -> {
-                sender.sendMessage(helpList.joinToString("\n"))
+                sender.sendMessage(MiniMessage.miniMessage().deserialize(helpList.joinToString("\n")))
                 return true
             }
         }
@@ -66,7 +71,7 @@ class Command : TabExecutor {
         }
         if (array.size == 2 && array[0] == "switch") {
             val list = mutableListOf<String>()
-            for (str in Main.configManager.sidebarMap.keys) {
+            for (str in Main.configManager!!.sidebarMap.keys) {
                 list.add(str)
             }
             return list
