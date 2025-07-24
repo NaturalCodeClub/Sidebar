@@ -3,15 +3,24 @@ package org.ncc.sidebar
 import com.google.gson.Gson
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.megavex.scoreboardlibrary.api.sidebar.Sidebar
+import org.bukkit.Bukkit
+import org.bukkit.OfflinePlayer
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import java.io.File
+import java.util.*
 import java.util.logging.Logger
 
 class ConfigManager {
     val gson = Gson()
+
+    data class Data(
+        var playerNameSidebarNameMap: MutableMap<String, String>,
+        var playerUUIDState: MutableMap<String, Boolean>
+    )
+
 
     lateinit var config: FileConfiguration
     val configFile: File = File(Main.instance!!.dataFolder, "config.yml")
@@ -47,7 +56,7 @@ class ConfigManager {
 
     //TODO complete it
     var playerNameSidebarNameMap = mutableMapOf<String, String>()
-    val playerState = mutableMapOf<Player, Boolean>()
+    val playerState = mutableMapOf<OfflinePlayer, Boolean>()
 
     var dataSaveInterval = 10
 
@@ -75,7 +84,13 @@ class ConfigManager {
             tempConf.set("sidebar.default.title", "<white>默认Sidebar</white>")
             tempConf.set("sidebar.default.lines", defaultSideBarLineConfig)
             tempConf.set("sidebar.default.update-interval", defaultSideBarUpdateInterval)
-            tempConf.setComments("sidebar.default.update-interval", listOf("单位 毫秒"))
+            tempConf.setComments(
+                "sidebar.default.update-interval", listOf(
+                    "单位 毫秒",
+                    "animation.yml中动画的更新间隔为动画的更新间隔",
+                    "记分板的更新间隔最终由此项决定"
+                )
+            )
             isConfigModified = true
         }
         if (isConfigModified) {
@@ -88,12 +103,12 @@ class ConfigManager {
             isAnimationModified = true
         }
         val tempAniConf: FileConfiguration = YamlConfiguration.loadConfiguration(animationFile)
-        if(tempAniConf.get("animation")==null){
-            tempAniConf.set("animation.default.lines",defaultAnimationLines)
-            tempAniConf.set("animation.default.update-interval-ms",defaultAnimationUpdateIntervalMs)
+        if (tempAniConf.get("animation") == null) {
+            tempAniConf.set("animation.default.lines", defaultAnimationLines)
+            tempAniConf.set("animation.default.update-interval-ms", defaultAnimationUpdateIntervalMs)
             isAnimationModified = true
         }
-        if(isAnimationModified){
+        if (isAnimationModified) {
             tempAniConf.save(animationFile)
         }
 
@@ -107,6 +122,7 @@ class ConfigManager {
     fun reloadConfig() {
         initConfig()
         loadConfig()
+        closeSidebarResource()
         getSidebar(config, Main.instance!!.logger)
     }
 
@@ -143,7 +159,11 @@ class ConfigManager {
         return sidebarMap[playerNameSidebarNameMap[player.name]]!!
     }
 
-    fun closeSidebar() {
+    fun closeSidebarResource() {
+        descriptionMap.clear()
+        for ((player, sidebarName) in playerNameSidebarNameMap) {
+            getPlayerSidebar(Bukkit.getPlayer(player)!!).removePlayer(Bukkit.getPlayer(player)!!)
+        }
         for ((str, sidebar) in sidebarMap) {
             sidebar.close()
         }
@@ -162,12 +182,20 @@ class ConfigManager {
         if (dataFile.inputStream().available() == 0) {
             return
         }
-        playerNameSidebarNameMap =
-            gson.fromJson(dataFile.readText(Charsets.UTF_8), mutableMapOf<String, String>().javaClass)
+        val dataVar = gson.fromJson(dataFile.readText(Charsets.UTF_8), Data::class.java)
+        playerNameSidebarNameMap = dataVar.playerNameSidebarNameMap
+        for ((uuid, state) in dataVar.playerUUIDState) {
+            playerState[Bukkit.getOfflinePlayer(UUID.fromString(uuid))] = state
+        }
     }
 
     fun saveData() {
-        val jsonStr = gson.toJson(playerNameSidebarNameMap)
+        val playerUUIDState = mutableMapOf<String, Boolean>()
+        for ((player, state) in playerState) {
+            playerUUIDState.put(player.uniqueId.toString(), state)
+        }
+        val dataVar = Data(playerNameSidebarNameMap, playerUUIDState)
+        val jsonStr = gson.toJson(dataVar)
         dataFile.outputStream().use { it.write(jsonStr.toByteArray(Charsets.UTF_8)) }
     }
 

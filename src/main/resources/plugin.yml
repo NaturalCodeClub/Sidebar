@@ -13,3 +13,9 @@ commands:
     aliases:
       - sb
     usage: "/sidebar [args] [...]"
+
+permissions:
+  sidebar.usage:
+    default: not op
+  sidebar.reload:
+    default: op

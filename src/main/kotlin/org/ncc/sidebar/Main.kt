@@ -15,6 +15,7 @@ class Main : JavaPlugin(), Listener {
     companion object{
         var instance: JavaPlugin? = null
         var configManager: ConfigManager? = null
+        var sidebarManager : SidebarManager? = null
         var sbLib: ScoreboardLibrary? = null
 
 //        fun getScoreboardLibrary(): ScoreboardLibrary{
@@ -30,6 +31,7 @@ class Main : JavaPlugin(), Listener {
 //    lateinit var sidebar: Sidebar
     override fun onEnable() {
         instance = this
+        sidebarManager = SidebarManager()
         try {
             sbLib = ScoreboardLibrary.loadScoreboardLibrary(this)
         } catch (e: NoPacketAdapterAvailableException) {
@@ -52,7 +54,7 @@ class Main : JavaPlugin(), Listener {
 
     override fun onDisable() {
 //        sidebar.close()
-        ConfigManager().closeSidebar()
+        ConfigManager().closeSidebarResource()
         sbLib!!.close()
     }
 
