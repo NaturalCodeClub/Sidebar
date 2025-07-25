@@ -71,7 +71,12 @@ class Command : TabExecutor {
             }
 
             "list" ->{
-
+                val list = mutableListOf<String>()
+                for((name,des) in Main.configManager!!.descriptionMap){
+                    list.add("<color:#55cdfc>$name</color> <gray>-</gray> <color:#f5abb9>$des</color>")
+                }
+                sender.sendMessage(MiniMessage.miniMessage().deserialize(list.joinToString("\n")))
+                return true
             }
 
             else -> {
