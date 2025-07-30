@@ -40,11 +40,17 @@ class Command : TabExecutor {
                 }
                 Main.configManager!!.playerState[Bukkit.getOfflinePlayer(sender.uniqueId)] = !Main.configManager!!.playerState[sender]!!
                 if (Main.configManager!!.playerState[Bukkit.getOfflinePlayer(sender.uniqueId)]!!) {
-                    Main.configManager!!.getPlayerSidebar(sender).addPlayer(sender)
+//                    Main.configManager!!.getPlayerSidebar(sender).addPlayer(sender)
+                    val sidebar = Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[sender.name]]!!.buildSidebar(sender)
+                    sidebar.addPlayer(sender)
+                    Main.sidebarManager!!.playerSidebarMap.put(sender, sidebar)
+                    Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[sender.name]]!!.addPlayerSidebar(sender ,sidebar)
                     sender.sendMessage("Sidebar 调整为 开 ")
                     return true
                 } else {
-                    Main.configManager!!.getPlayerSidebar(sender).removePlayer(sender)
+//                    Main.configManager!!.getPlayerSidebar(sender).removePlayer(sender)
+                    Main.sidebarManager!!.playerSidebarMap[sender]?.removePlayer(sender)
+                    Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[sender.name]]!!.removePlayerSidebar(sender,Main.sidebarManager!!.playerSidebarMap[sender]!!)
                     sender.sendMessage("Sidebar 调整为 关 ")
                     return true
                 }
@@ -60,13 +66,21 @@ class Command : TabExecutor {
                     sender.sendMessage(MiniMessage.miniMessage().deserialize(helpList.joinToString("\n")))
                     return true
                 }
-                if (array[1] !in Main.configManager!!.sidebarMap.keys) {
+                if (array[1] !in Main.configManager!!.sidebarFactoryMap.keys) {
                     sender.sendMessage("你所指定的Sidebar不存在")
                     return true
                 }
-                Main.configManager!!.getPlayerSidebar(sender).removePlayer(sender)
+//                Main.configManager!!.getPlayerSidebar(sender).removePlayer(sender)
                 Main.configManager!!.playerNameSidebarNameMap[sender.name] = array[1]
-                Main.configManager!!.sidebarMap[array[1]]!!.addPlayer(sender)
+                if(Main.configManager!!.playerState[sender]!!){
+                   Main.sidebarManager!!.playerSidebarMap[sender]?.removePlayer(sender)
+                   Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[sender.name]]!!.removePlayerSidebar(sender,Main.sidebarManager!!.playerSidebarMap[sender]!!)
+                   val sidebar = Main.configManager!!.sidebarFactoryMap[array[1]]!!.buildSidebar(sender)
+                    sidebar.addPlayer(sender)
+                   Main.sidebarManager!!.playerSidebarMap[sender] = sidebar
+                   Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[sender.name]]!!.addPlayerSidebar(sender,Main.sidebarManager!!.playerSidebarMap[sender]!!)
+                }
+//                Main.configManager!!.sidebarMap[array[1]]!!.addPlayer(sender)
                 sender.sendMessage(MiniMessage.miniMessage().deserialize("<green>更改成功"))
             }
 
@@ -93,7 +107,7 @@ class Command : TabExecutor {
         }
         if (array.size == 2 && array[0] == "switch") {
             val list = mutableListOf<String>()
-            for (str in Main.configManager!!.sidebarMap.keys) {
+            for (str in Main.configManager!!.sidebarFactoryMap.keys) {
                 list.add(str)
             }
             return list

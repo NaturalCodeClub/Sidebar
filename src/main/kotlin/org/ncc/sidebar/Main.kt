@@ -54,7 +54,8 @@ class Main : JavaPlugin(), Listener {
 
     override fun onDisable() {
 //        sidebar.close()
-        ConfigManager().closeSidebarResource()
+        configManager!!.closeConfigResource()
+        configManager!!.closeDataResource()
         sbLib!!.close()
     }
 

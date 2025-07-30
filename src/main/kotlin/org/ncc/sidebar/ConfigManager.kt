@@ -1,14 +1,11 @@
 package org.ncc.sidebar
 
 import com.google.gson.Gson
-import net.kyori.adventure.text.minimessage.MiniMessage
-import net.megavex.scoreboardlibrary.api.sidebar.Sidebar
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.configuration.file.YamlConfiguration
-import org.bukkit.entity.Player
 import java.io.File
 import java.util.*
 import java.util.logging.Logger
@@ -50,8 +47,7 @@ class ConfigManager {
     val defaultAnimationUpdateIntervalMs = 200
 
     val dataFile: File = File(Main.instance!!.dataFolder, "data.json")
-
-    val sidebarMap = mutableMapOf<String, Sidebar>()
+    val sidebarFactoryMap = mutableMapOf<String, SidebarFactory>()
     val descriptionMap = mutableMapOf<String, String>()
 
     //TODO complete it
@@ -120,9 +116,9 @@ class ConfigManager {
     }
 
     fun reloadConfig() {
+        closeConfigResource()
         initConfig()
         loadConfig()
-        closeSidebarResource()
         getSidebar(config, Main.instance!!.logger)
     }
 
@@ -136,37 +132,42 @@ class ConfigManager {
             }
             val description = subSection.getString("description") ?: ""
             val title = subSection.getString("title")!!
-            val line = subSection.getStringList("lines")
+            var line = subSection.getStringList("lines")
             val updateInterval = subSection.getInt("update-interval")
             if (line.size > 15) {
                 log.warning("Sidebar $key line is too long, max length is 15, current length is ${line.size}")
+                line = line.subList(0, 14)
             }
-            var i = 0
-            val tempSidebar = Main.sbLib!!.createSidebar()
-            tempSidebar.title(MiniMessage.miniMessage().deserialize(title))
-            for (str in line) {
-                if (i > 14) break
-                tempSidebar.line(i, MiniMessage.miniMessage().deserialize(str))
-                i++
+            if (sidebarFactoryMap.containsKey(key)) {
+                continue
             }
-            sidebarMap.put(key, tempSidebar)
+            sidebarFactoryMap.put(key, SidebarFactory(title, line, updateInterval))
+//            val tempSidebar = Main.sbLib!!.createSidebar()
+//            tempSidebar.title(MiniMessage.miniMessage().deserialize(title))
+//            for (str in line) {
+//                if (i > 14) break
+//                tempSidebar.line(i, MiniMessage.miniMessage().deserialize(str))
+//                i++
+//            }
+//            sidebarMap.put(key, tempSidebar)
             descriptionMap.put(key, description)
         }
     }
 
-    fun getPlayerSidebar(player: Player): Sidebar {
-        if (!playerNameSidebarNameMap.containsKey(player.name)) return sidebarMap[defaultSidebarSelection]!!
-        return sidebarMap[playerNameSidebarNameMap[player.name]]!!
-    }
+//    fun getPlayerSidebar(player: Player): Sidebar {
+//        if (!playerNameSidebarNameMap.containsKey(player.name)) return sidebarMap[defaultSidebarSelection]!!
+//        return sidebarMap[playerNameSidebarNameMap[player.name]]!!
+//    }
 
-    fun closeSidebarResource() {
+    fun closeConfigResource() {
         descriptionMap.clear()
         for ((player, sidebarName) in playerNameSidebarNameMap) {
-            getPlayerSidebar(Bukkit.getPlayer(player)!!).removePlayer(Bukkit.getPlayer(player)!!)
+//            getPlayerSidebar(Bukkit.getPlayer(player)!!).removePlayer(Bukkit.getPlayer(player)!!)
         }
-        for ((str, sidebar) in sidebarMap) {
-            sidebar.close()
-        }
+        sidebarFactoryMap.clear()
+    }
+    fun closeDataResource() {
+        playerNameSidebarNameMap.clear()
     }
 
     fun initData() {

@@ -1,6 +1,5 @@
 package org.ncc.sidebar
 
-import net.megavex.scoreboardlibrary.api.sidebar.Sidebar
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -15,8 +14,9 @@ class EventManager : Listener {
 
         val player = event.player
         val offlinePlayer = Bukkit.getOfflinePlayer(player.uniqueId)
-        val sb: Sidebar =
-            Main.configManager?.getPlayerSidebar(player)?: Main.configManager!!.sidebarMap[Main.configManager!!.defaultSidebarSelection]!!
+//        val originSb: Sidebar =
+//            Main.configManager?.getPlayerSidebar(player)?: Main.configManager!!.sidebarMap[Main.configManager!!.defaultSidebarSelection]!!
+
         if(Main.configManager!!.playerState[offlinePlayer] == null) {
             Main.configManager!!.playerState[offlinePlayer] = true
         }
@@ -24,14 +24,24 @@ class EventManager : Listener {
             Main.configManager!!.playerNameSidebarNameMap[player.name] = Main.configManager!!.defaultSidebarSelection
         }
         if(!Main.configManager!!.playerState[offlinePlayer]!!) return
-        sb.addPlayer(player)
+        val sidebarFactory = Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[player.name]]
+        val sidebar = sidebarFactory!!.buildSidebar(player)
+        sidebar.addPlayer(player)
+        Main.sidebarManager!!.playerSidebarMap.put(player, sidebar)
+        Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[player.name]]!!.addPlayerSidebar(player,sidebar)
+//        originSb.addPlayer(player)
     }
 
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
 //        sidebar.removePlayer(event.player)
         val player = event.player
-        val sb: Sidebar = Main.configManager!!.getPlayerSidebar(player)
-        sb.removePlayer(player)
+        if(!Main.configManager!!.playerState[Bukkit.getOfflinePlayer(player.uniqueId)]!!) return
+        val sidebar = Main.sidebarManager!!.playerSidebarMap[player]!!
+        Main.sidebarManager!!.playerSidebarMap.remove(player)
+        sidebar.removePlayer(player)
+        Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[player.name]]!!.removePlayerSidebar(player,sidebar)
+//        val sb: Sidebar = Main.configManager!!.getPlayerSidebar(player)
+//        sb.removePlayer(player)
     }
 }
