@@ -24,10 +24,15 @@ class EventManager : Listener {
             Main.configManager!!.playerNameSidebarNameMap[player.name] = Main.configManager!!.defaultSidebarSelection
         }
         if(!Main.configManager!!.playerState[offlinePlayer]!!) return
+
+//        if(Main.sidebarManager!!.simpleSidebarSet.contains(Main.configManager.playerNameSidebarNameMap[player.name])) {
+//            
+//        }
+
         val sidebarFactory = Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[player.name]]
         val sidebar = sidebarFactory!!.buildSidebar(player)
         sidebar.addPlayer(player)
-        Main.sidebarManager!!.playerSidebarMap.put(player, sidebar)
+        Main.sidebarManager!!.playerSidebarMap[player] = sidebar
         Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[player.name]]!!.addPlayerSidebar(player,sidebar)
 //        originSb.addPlayer(player)
     }

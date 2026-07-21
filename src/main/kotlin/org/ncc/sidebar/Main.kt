@@ -36,7 +36,7 @@ class Main : JavaPlugin(), Listener {
             sbLib = ScoreboardLibrary.loadScoreboardLibrary(this)
         } catch (e: NoPacketAdapterAvailableException) {
             sbLib = NoopScoreboardLibrary()
-            logger.warning("No packet adapter available, falling back to noop library")
+            logger.warning("No packet adapter available, falling back to noop library.\n" + e.message)
         }
         configManager = ConfigManager()
         configManager!!.initConfig()

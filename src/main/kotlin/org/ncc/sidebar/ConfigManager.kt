@@ -27,7 +27,6 @@ class ConfigManager {
         "<blue>支持</blue><gray>PlaceHolderAPI</gray><blue>格式</blue>",
         "<red>只支持</red><gray>MiniMessage</gray><red>格式</red>"
     )
-    val defaultSideBarUpdateInterval = 10
     var defaultSidebarSelection: String = "default"
 
     val animationFile: File = File(Main.instance!!.dataFolder, "animation.yml")
@@ -69,6 +68,7 @@ class ConfigManager {
         val tempConf: FileConfiguration = YamlConfiguration.loadConfiguration(configFile)
         if (tempConf.get("data.save-interval") == null) {
             tempConf.set("data.save-interval", dataSaveInterval)
+            tempConf.setComments("data.save-interval", listOf("单位 分钟", "玩家数据的保存时间"))
             isConfigModified = true
         }
         if (tempConf.get("first-join.defaultsidebar") == null) {
@@ -79,14 +79,6 @@ class ConfigManager {
             tempConf.set("sidebar.default.description", "<white>一个默认的Sidebar</white>")
             tempConf.set("sidebar.default.title", "<white>默认Sidebar</white>")
             tempConf.set("sidebar.default.lines", defaultSideBarLineConfig)
-            tempConf.set("sidebar.default.update-interval", defaultSideBarUpdateInterval)
-            tempConf.setComments(
-                "sidebar.default.update-interval", listOf(
-                    "单位 毫秒",
-                    "animation.yml中动画的更新间隔为动画的更新间隔",
-                    "记分板的更新间隔最终由此项决定"
-                )
-            )
             isConfigModified = true
         }
         if (isConfigModified) {
@@ -126,6 +118,9 @@ class ConfigManager {
         sidebarSection = conf.getConfigurationSection("sidebar")!!
         for (key: String in sidebarSection.getKeys(false)) {
             val subSection = sidebarSection.getConfigurationSection(key)!!
+            if (sidebarFactoryMap.containsKey(key)) {
+                continue
+            }
             if (subSection.get("title") == null || subSection.get("lines") == null || subSection.get("update-interval") == null) {
                 log.warning("Sidebar $key is invalid")
                 continue
@@ -133,15 +128,17 @@ class ConfigManager {
             val description = subSection.getString("description") ?: ""
             val title = subSection.getString("title")!!
             var line = subSection.getStringList("lines")
-            val updateInterval = subSection.getInt("update-interval")
             if (line.size > 15) {
                 log.warning("Sidebar $key line is too long, max length is 15, current length is ${line.size}")
                 line = line.subList(0, 14)
             }
-            if (sidebarFactoryMap.containsKey(key)) {
-                continue
-            }
-            sidebarFactoryMap.put(key, SidebarFactory(title, line, updateInterval))
+
+
+            sidebarFactoryMap[key] = SidebarFactory(title, line)
+            if (Main.sidebarManager!!.isSimpleSidebar(line)) Main.sidebarManager!!.simpleSidebarSet.add(
+                sidebarFactoryMap[key]!!.buildSidebar()
+            )
+
 //            val tempSidebar = Main.sbLib!!.createSidebar()
 //            tempSidebar.title(MiniMessage.miniMessage().deserialize(title))
 //            for (str in line) {
@@ -150,7 +147,7 @@ class ConfigManager {
 //                i++
 //            }
 //            sidebarMap.put(key, tempSidebar)
-            descriptionMap.put(key, description)
+            descriptionMap[key] = description
         }
     }
 
@@ -161,11 +158,12 @@ class ConfigManager {
 
     fun closeConfigResource() {
         descriptionMap.clear()
-        for ((player, sidebarName) in playerNameSidebarNameMap) {
-//            getPlayerSidebar(Bukkit.getPlayer(player)!!).removePlayer(Bukkit.getPlayer(player)!!)
-        }
+//        for ((player, sidebarName) in playerNameSidebarNameMap) {
+////            getPlayerSidebar(Bukkit.getPlayer(player)!!).removePlayer(Bukkit.getPlayer(player)!!)
+//        }
         sidebarFactoryMap.clear()
     }
+
     fun closeDataResource() {
         playerNameSidebarNameMap.clear()
     }
@@ -193,7 +191,7 @@ class ConfigManager {
     fun saveData() {
         val playerUUIDState = mutableMapOf<String, Boolean>()
         for ((player, state) in playerState) {
-            playerUUIDState.put(player.uniqueId.toString(), state)
+            playerUUIDState[player.uniqueId.toString()] = state
         }
         val dataVar = Data(playerNameSidebarNameMap, playerUUIDState)
         val jsonStr = gson.toJson(dataVar)
