@@ -7,46 +7,63 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 
 class EventManager : Listener {
+    // 事件监听器
+
     @EventHandler
-    //Paper desparated it with some newer api but no javadoc on their website,wait to replace...
+    //Paper desparated it with some newer api but no Javadoc on their website,wait to replace...
+    // 玩家加入时初始化 Sidebar
     fun onPlayerJoin(event: PlayerJoinEvent) {
-//        sidebar.addPlayer(event.player)
-
         val player = event.player
-        val offlinePlayer = Bukkit.getOfflinePlayer(player.uniqueId)
-//        val originSb: Sidebar =
-//            Main.configManager?.getPlayerSidebar(player)?: Main.configManager!!.sidebarMap[Main.configManager!!.defaultSidebarSelection]!!
-
-        if(Main.configManager!!.playerState[offlinePlayer] == null) {
-            Main.configManager!!.playerState[offlinePlayer] = true
+        // 首次加入时初始化 Sidebar 状态为开启
+        if (Main.configManager!!.playerState[player] == null) {
+            Main.configManager!!.playerState[player] = true
         }
-        if(Main.configManager!!.playerNameSidebarNameMap[player.name] == null) {
+        // 首次加入时分配默认 Sidebar
+        if (Main.configManager!!.playerNameSidebarNameMap[player.name] == null) {
             Main.configManager!!.playerNameSidebarNameMap[player.name] = Main.configManager!!.defaultSidebarSelection
         }
-        if(!Main.configManager!!.playerState[offlinePlayer]!!) return
+        // 玩家已关闭 Sidebar 则不显示
+        if (!Main.configManager!!.playerState[player]!!) return
 
-//        if(Main.sidebarManager!!.simpleSidebarSet.contains(Main.configManager.playerNameSidebarNameMap[player.name])) {
-//            
-//        }
+        // 静态 Sidebar 可直接将玩家添加到全局实例
+        if (Main.sidebarManager!!.simpleSidebarMap.containsKey(Main.configManager!!.playerNameSidebarNameMap[player.name])) {
+            val sidebarName = Main.configManager!!.playerNameSidebarNameMap[player.name]
+            Main.sidebarManager!!.simpleSidebarMap[sidebarName]!!.addPlayer(player)
+            return
+        }
 
-        val sidebarFactory = Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[player.name]]
+        // 普通 Sidebar 需为玩家构建独立实例
+        val sidebarFactory =
+            Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[player.name]]
         val sidebar = sidebarFactory!!.buildSidebar(player)
         sidebar.addPlayer(player)
-        Main.sidebarManager!!.playerSidebarMap[player] = sidebar
-        Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[player.name]]!!.addPlayerSidebar(player,sidebar)
-//        originSb.addPlayer(player)
+        Main.sidebarManager!!.playerNormalSidebarMap[player] = sidebar
+        Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[player.name]]!!.addPlayerSidebar(
+            player,
+            sidebar
+        )
     }
 
     @EventHandler
+    // 玩家退出时清理 Sidebar
     fun onPlayerQuit(event: PlayerQuitEvent) {
-//        sidebar.removePlayer(event.player)
         val player = event.player
-        if(!Main.configManager!!.playerState[Bukkit.getOfflinePlayer(player.uniqueId)]!!) return
-        val sidebar = Main.sidebarManager!!.playerSidebarMap[player]!!
-        Main.sidebarManager!!.playerSidebarMap.remove(player)
+        if (!Main.configManager!!.playerState[player]!!) return
+
+        // 静态 Sidebar 只需从全局实例移除玩家
+        if (Main.sidebarManager!!.simpleSidebarMap.containsKey(Main.configManager!!.playerNameSidebarNameMap[player.name])) {
+            val sidebarName = Main.configManager!!.playerNameSidebarNameMap[player.name]
+            Main.sidebarManager!!.simpleSidebarMap[sidebarName]!!.removePlayer(player)
+            return
+        }
+
+        // 普通 Sidebar 需清理玩家专属实例
+        val sidebar = Main.sidebarManager!!.playerNormalSidebarMap[player]!!
+        Main.sidebarManager!!.playerNormalSidebarMap.remove(player)
         sidebar.removePlayer(player)
-        Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[player.name]]!!.removePlayerSidebar(player,sidebar)
-//        val sb: Sidebar = Main.configManager!!.getPlayerSidebar(player)
-//        sb.removePlayer(player)
+        Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[player.name]]!!.removePlayerSidebar(
+            player,
+            sidebar
+        )
     }
 }
