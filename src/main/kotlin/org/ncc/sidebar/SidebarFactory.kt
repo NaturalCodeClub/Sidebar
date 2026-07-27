@@ -2,7 +2,6 @@ package org.ncc.sidebar
 
 import me.clip.placeholderapi.PlaceholderAPI
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.minimessage.MiniMessage
 import net.megavex.scoreboardlibrary.api.sidebar.Sidebar
 import net.megavex.scoreboardlibrary.api.sidebar.component.ComponentSidebarLayout
 import net.megavex.scoreboardlibrary.api.sidebar.component.LineDrawable
@@ -50,18 +49,11 @@ class SidebarFactory(
     fun buildSidebar(): Sidebar {
         val sb = Main.sbLib!!.createSidebar()
         val sidebarComponentBuilder: SidebarComponent.Builder = SidebarComponent.builder()
+        // 收集本 Sidebar 中用到的动画实例及其刷新间隔，后续注册到全局 animationDataMap 统一驱动
         var animationIntervalMap = mutableMapOf<SidebarAnimation<Component>, Int>()
         var hasAnimation = false
         for (str in lines) {
             if (Main.sidebarManager!!.hasAnimatedLine(str)) {
-//                val animationFrame = ArrayList<Component>()
-//                for (originLine in Main.configManager!!.getAnimationLines(str)){
-//                    animationFrame.add(Main.miniMessage.deserialize(originLine))
-//                }
-//                // 创建独立的动画实例加入行构建器以驱动帧切换
-//                sidebarComponentBuilder.addAnimatedLine(CollectionSidebarAnimation(animationFrame))
-//                // 额外在全局集合中保留引用，确保插件关闭时可停止动画
-//                Main.sidebarManager!!.animationSet.add(CollectionSidebarAnimation(animationFrame))
                 hasAnimation = true
                 sidebarComponentBuilder.addComponent(getAnimatedComponent(str, animationIntervalMap))
                 continue
@@ -74,11 +66,14 @@ class SidebarFactory(
             SidebarComponent.staticLine(Main.miniMessage.deserialize(title)),
             sidebarComponentBuilder.build()
         )
+        // 将动画及其所属 Sidebar 注册到全局映射，动画调度任务据此遍历并刷新
         if (hasAnimation) {
             for (animation in animationIntervalMap.keys) {
+                // 同一动画可能被多个 Sidebar 引用，新增到此动画的关联列表即可
                 if (Main.sidebarManager!!.animationDataMap.containsKey(animation))
                     Main.sidebarManager!!.animationDataMap[animation]!!.includedSidebars[sidebarLayout] = sb
                 else {
+                    // 首次出现的动画需要创建 AnimationData 并记录其刷新间隔
                     Main.sidebarManager!!.animationDataMap[animation] = SidebarManager.AnimationData(
                         mutableMapOf(),
                         animationIntervalMap[animation]!!
@@ -95,17 +90,22 @@ class SidebarFactory(
         str: String,
         map: MutableMap<SidebarAnimation<Component>, Int>
     ): SidebarComponent {
+        // 提取行中所有 {animation:xxx} 的动画名称
         val animationListStr = ANIMATION_REGEX.findAll(str)
             .map { it.groupValues[1] }
             .toList()
+        // 按动画标记切分，parts 是静态文本段（数量 = 动画数 + 1，因首尾都可能存在静态文本）
         val parts = str.split(ANIMATION_REGEX)
+        // 自定义绘制组件：每次重绘时拼接静态文本与各动画当前帧
         val animatedLine = SidebarComponent { drawable: LineDrawable? ->
             var line: Component = Component.text().build()
             var i = 0
+            // parts 比 animationListStr 多一段，最后一次只拼接静态文本不拼接动画
             while (i < parts.size - 1) {
                 line = line.append(Main.miniMessage.deserialize(parts[i]))
                 if (i <= animationListStr.size - 1) {
                     var animationComponent: SidebarAnimation<Component>
+                    // 缓存动画实例：同一动画名在多个 Sidebar 或多行中复用同一个实例
                     if (Main.sidebarManager!!.animationNameMap[animationListStr[i]] != null) {
                         animationComponent = Main.sidebarManager!!.animationNameMap[animationListStr[i]]!!
                     } else {
@@ -116,6 +116,7 @@ class SidebarFactory(
                         animationComponent = CollectionSidebarAnimation(animationComponentList)
                         Main.sidebarManager!!.animationNameMap[animationListStr[i]] = animationComponent
                     }
+                    // 记录此动画实例在本 Sidebar 中使用的刷新间隔，用于调度
                     map[animationComponent] = Main.configManager!!.getAnimationUpdateIntervalMs(animationListStr[i])
                     line = line.append(animationComponent.currentFrame())
                 }

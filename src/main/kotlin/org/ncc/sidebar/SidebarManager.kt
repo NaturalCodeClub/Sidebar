@@ -17,6 +17,8 @@ class SidebarManager {
 
     // 跟踪所有动画实例，插件关闭时统一停止，防止后台线程泄漏
     val animationNameMap = mutableMapOf<String, SidebarAnimation<Component>>()
+
+    // 记录使用该动画的所有 Sidebar，以便动画帧更新时批量推送到对应玩家的显示
     val animationDataMap = mutableMapOf<SidebarAnimation<Component>, AnimationData>()
 
     private val ANIMATION_REGEX = Regex("\\{animation:.*?}")

@@ -1,6 +1,5 @@
 package org.ncc.sidebar
 
-import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
@@ -43,6 +42,7 @@ class Command : TabExecutor {
                     return true
                 }
                 // 翻转当前玩家的 Sidebar 开关状态
+                // playerState 同时以 Player 和 OfflinePlayer 为键，前者用于运行时查询，后者用于 JSON 持久化
                 Main.configManager!!.playerState[Bukkit.getOfflinePlayer(sender.uniqueId)] =
                     !Main.configManager!!.playerState[sender]!!
                 if (Main.configManager!!.playerState[Bukkit.getOfflinePlayer(sender.uniqueId)]!!) {

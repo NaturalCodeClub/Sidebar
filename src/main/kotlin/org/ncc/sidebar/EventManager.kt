@@ -1,6 +1,5 @@
 package org.ncc.sidebar
 
-import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
@@ -25,14 +24,14 @@ class EventManager : Listener {
         // 玩家已关闭 Sidebar 则不显示
         if (!Main.configManager!!.playerState[player]!!) return
 
-        // 静态 Sidebar 可直接将玩家添加到全局实例
+        // 静态 Sidebar（无 PAPI 占位符）可共用全局实例，只需将玩家添加到该实例的观察列表
         if (Main.sidebarManager!!.simpleSidebarMap.containsKey(Main.configManager!!.playerNameSidebarNameMap[player.name])) {
             val sidebarName = Main.configManager!!.playerNameSidebarNameMap[player.name]
             Main.sidebarManager!!.simpleSidebarMap[sidebarName]!!.addPlayer(player)
             return
         }
 
-        // 普通 Sidebar 需为玩家构建独立实例
+        // 普通 Sidebar（含 PAPI 占位符）每位玩家的渲染结果不同，需为每位玩家构建独立实例
         val sidebarFactory =
             Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[player.name]]
         val sidebar = sidebarFactory!!.buildSidebar(player)

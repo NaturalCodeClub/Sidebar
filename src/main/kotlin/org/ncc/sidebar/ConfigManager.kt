@@ -113,7 +113,7 @@ class ConfigManager {
     // 加载配置
     fun loadConfig() {
         config = YamlConfiguration.loadConfiguration(configFile)
-        defaultSidebarSelection = config.getString("first-join.defaultsidebar",defaultSidebarSelection)!!
+        defaultSidebarSelection = config.getString("first-join.defaultsidebar", defaultSidebarSelection)!!
         animationConfig = YamlConfiguration.loadConfiguration(animationFile)
         // animation.yml 缺少 animation 段视为致命错误，直接关闭插件
         if (animationConfig.getConfigurationSection("animation") == null) {
@@ -166,12 +166,7 @@ class ConfigManager {
     }
 
     fun getAnimationLines(section: String): List<String> {
-//        val detailedAnimation = animationConfig.getConfigurationSection(section)!!
-//        if(!detailedAnimation.getKeys(false).contains(section)) {
-//            Main.instance?.logger?.warning("Animation section $section is invalid,please check config.yml and animation.yml .")
-//            return listOf("<red><bold>Invalid.")
-//        }
-//        return detailedAnimation.getStringList("$section.lines")
+        // animation.yml 路径结构: animation.<动画名>.lines，需带上 animation. 前缀定位
         val detailedAnimation = animationConfig.getConfigurationSection("animation.$section")!!
         if (detailedAnimation.getConfigurationSection("lines") == null) {
             Main.instance!!.logger.warning("animation.$section is invalid,please check config.yml and animation.yml .")

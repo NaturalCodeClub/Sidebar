@@ -11,8 +11,6 @@ import org.bukkit.plugin.java.JavaPlugin
 
 class Main : JavaPlugin(), Listener {
     // 插件主类
-//    lateinit var sbLib: ScoreboardLibrary
-//    lateinit var configManager: ConfigManager
 
     // 单例与核心实例
     companion object {
@@ -23,7 +21,6 @@ class Main : JavaPlugin(), Listener {
         val miniMessage = MiniMessage.miniMessage()
     }
 
-    //    lateinit var sidebar: Sidebar
     // 插件启用
     override fun onEnable() {
         instance = this
@@ -32,6 +29,7 @@ class Main : JavaPlugin(), Listener {
             sbLib = ScoreboardLibrary.loadScoreboardLibrary(this)
         } catch (e: NoPacketAdapterAvailableException) {
             // 没有数据包适配器时退化为空操作库，防止插件崩溃
+            // 使用 NoopScoreboardLibrary 避免直接抛异常导致插件加载失败
             sbLib = NoopScoreboardLibrary()
             logger.warning("No packet adapter available, falling back to noop library.\n" + e.message)
         }
@@ -42,8 +40,6 @@ class Main : JavaPlugin(), Listener {
         configManager!!.loadData()
         configManager!!.getSidebar(config, logger)
 
-//        sidebar = sbLib.createSidebar()
-
         Bukkit.getPluginManager().registerEvents(EventManager(), this)
         Bukkit.getPluginCommand("sidebar")?.setExecutor(Command())
 
@@ -51,7 +47,6 @@ class Main : JavaPlugin(), Listener {
 
     // 插件禁用
     override fun onDisable() {
-//        sidebar.close()
         sidebarManager!!.onPluginClose()
         configManager!!.closeConfigResource()
         configManager!!.closeDataResource()
