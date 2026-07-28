@@ -21,13 +21,9 @@ repositories {
 }
 
 dependencies {
-    val scoreboardLibraryVersion = "2.4.1"
-    implementation("net.megavex:scoreboard-library-api:${scoreboardLibraryVersion}")
-    runtimeOnly("net.megavex:scoreboard-library-implementation:${scoreboardLibraryVersion}")
-    implementation("net.megavex:scoreboard-library-extra-kotlin:${scoreboardLibraryVersion}")
-    // Kotlin specific extensions (optional)
-    // Add packet adapter implementations you want:
-    runtimeOnly("net.megavex:scoreboard-library-modern:${scoreboardLibraryVersion}")
+    val scoreboardLibraryVersion = "2.8.1"
+    implementation("net.megavex:scoreboard-library-api:$scoreboardLibraryVersion")
+    runtimeOnly("net.megavex:scoreboard-library-implementation:$scoreboardLibraryVersion")
     compileOnly("me.clip:placeholderapi:2.11.6")
 
     compileOnly("dev.folia:folia-api:1.21.4-R0.1-SNAPSHOT")
