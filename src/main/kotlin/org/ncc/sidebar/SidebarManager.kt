@@ -22,6 +22,7 @@ class SidebarManager {
     // 记录使用该动画的所有 Sidebar，以便动画帧更新时批量推送到对应玩家的显示
     val animationDataMap = ConcurrentHashMap<SidebarAnimation<Component>, AnimationData>()
 
+    // 仅用于检测，不需要捕获组
     private val ANIMATION_REGEX = Regex("\\{animation:.*?}")
     private val PAPI_REGEX = Regex("%.*?%")
 

@@ -11,6 +11,7 @@ class SidebarUpdateTasks {
         private val cooldownTimestampMap = mutableMapOf<SidebarAnimation<Component>, Long>()
 
         fun start() {
+            // 每 1 tick（50ms）轮询一次，各动画通过 cooldown 按各自 interval 错开推进
             Bukkit.getGlobalRegionScheduler().runAtFixedRate(Main.instance!!, Consumer { _ ->
                 val sm = Main.sidebarManager!!
                 val map = sm.animationDataMap
@@ -23,19 +24,22 @@ class SidebarUpdateTasks {
                 for ((animation, data) in map) {
                     if (data.includedSidebars.isEmpty()) continue
                     if (cooldownTimestampMap.containsKey(animation)) {
+                        // 冷却未结束则跳过，等待下次轮询
                         if (cooldownTimestampMap[animation]!! > System.currentTimeMillis()) continue
                         animation.nextFrame()
+                        // 将更新后的帧重新 apply 到所有引用此动画的 Sidebar
                         for ((layout, sidebar) in data.includedSidebars) {
                             layout.apply(sidebar)
                         }
-                        val addedMS = if (data.updateIntervalMs > 5) data.updateIntervalMs else 5
+                        // 设置下次推进的时间戳，下限 50ms 避免过于频繁的 apply 操作
+                        val addedMS = if (data.updateIntervalMs > 50) data.updateIntervalMs else 50
                         cooldownTimestampMap[animation] = System.currentTimeMillis() + addedMS
                     } else {
                         animation.nextFrame()
                         for ((layout, sidebar) in data.includedSidebars) {
                             layout.apply(sidebar)
                         }
-                        val addedMS = if (data.updateIntervalMs > 5) data.updateIntervalMs else 5
+                        val addedMS = if (data.updateIntervalMs > 50) data.updateIntervalMs else 50
                         cooldownTimestampMap[animation] = System.currentTimeMillis() + addedMS
                     }
                 }

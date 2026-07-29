@@ -119,6 +119,7 @@ class ConfigManager {
         config = YamlConfiguration.loadConfiguration(configFile)
         isDebugMode = config.getBoolean("debug", false)
         defaultSidebarSelection = config.getString("first-join.defaultsidebar", defaultSidebarSelection)!!
+        // 保存间隔最小为 1 分钟，防止配置误填 0 或负数导致过于频繁的磁盘写入
         dataSaveIntervalMin = if (config.getInt(
                 "data.save-interval",
                 dataSaveIntervalMin

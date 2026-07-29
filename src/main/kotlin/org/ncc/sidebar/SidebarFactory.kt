@@ -16,6 +16,7 @@ class SidebarFactory(
 ) {
     // 创建和管理 Sidebar 实例
     val playerSidebarMap = mutableMapOf<Player, Sidebar>()
+    // 带捕获组的版本：groupValues[1] 可提取动画名，用于按名查找配置
     private val ANIMATION_REGEX = Regex("\\{animation:(.*?)}")
 
     override fun toString(): String {
@@ -26,6 +27,7 @@ class SidebarFactory(
     fun buildSidebar(player: Player): Sidebar {
         val sb = Main.sbLib!!.createSidebar()
         val sidebarComponentBuilder: SidebarComponent.Builder = SidebarComponent.builder()
+        // 收集此 Sidebar 中用到的动画实例及刷新间隔，后续注册到全局 animationDataMap 统一驱动
         val animationIntervalMap = mutableMapOf<SidebarAnimation<Component>, Int>()
         var hasAnimation = false
         for (str in lines) {
@@ -45,14 +47,6 @@ class SidebarFactory(
                 Main.miniMessage.deserialize(str)
             )
         }
-//        for (str in lines) {
-//            if (Main.sidebarManager!!.hasPAPILine(str)) sidebarComponentBuilder.addDynamicLine {
-//                Main.miniMessage.deserialize(
-//                    PlaceholderAPI.setPlaceholders(player, str)
-//                )
-//            }
-//            else sidebarComponentBuilder.addStaticLine(Main.miniMessage.deserialize(str))
-//        }
         val sidebarLayout = ComponentSidebarLayout(
             SidebarComponent.staticLine(
                 Main.miniMessage.deserialize(PlaceholderAPI.setPlaceholders(player, title))
@@ -137,12 +131,14 @@ class SidebarFactory(
         player: Player?,
         map: MutableMap<SidebarAnimation<Component>, Int>
     ): () -> Component {
+        // 返回一个 lambda 作为动态行供给器，每次重绘时重新拼接静态文本与动画当前帧
         // 提取行中所有 {animation:xxx} 的动画名称
         val animationListStr = ANIMATION_REGEX.findAll(str)
             .map { it.groupValues[1] }
             .toList()
         // 按动画标记切分，parts 是静态文本段（数量 = 动画数 + 1，因首尾都可能存在静态文本）
         val parts = str.split(ANIMATION_REGEX)
+        // 预先从缓存或配置文件加载所有动画实例，避免每次重绘时重复创建
         var animations: Array<SidebarAnimation<Component>> = emptyArray()
         for (animation in animationListStr) {
             var animationComponent: SidebarAnimation<Component>
@@ -161,6 +157,7 @@ class SidebarFactory(
             map[animationComponent] = Main.configManager!!.getAnimationUpdateIntervalMs(animation)
         }
         // 自定义绘制组件：每次重绘时拼接静态文本与各动画当前帧
+        // 重绘时调用此 lambda，按顺序交替拼接静态文本段与对应动画的当前帧
         val animatedLines = {
             var line: Component = Component.text().build()
             var i = 0
@@ -176,17 +173,6 @@ class SidebarFactory(
                 )
                 else line.append(Main.miniMessage.deserialize(parts[i]))
                 if (i <= animations.size - 1) {
-                    // 缓存动画实例：同一动画名在多个 Sidebar 或多行中复用同一个实例
-//                    if (Main.sidebarManager!!.animationNameMap[animationListStr[i]] != null) {
-//                        animationComponent = Main.sidebarManager!!.animationNameMap[animationListStr[i]]!!
-//                    } else {
-//                        val animationComponentList: MutableList<Component> = ArrayList()
-//                        for (s in Main.configManager!!.getAnimationLines(animationListStr[i])) {
-//                            animationComponentList.add(Main.miniMessage.deserialize(s))
-//                        }
-//                        animationComponent = CollectionSidebarAnimation(animationComponentList)
-//                        Main.sidebarManager!!.animationNameMap[animationListStr[i]] = animationComponent
-//                    }
                     line = line.append(animations[i].currentFrame())
                 }
                 i++
