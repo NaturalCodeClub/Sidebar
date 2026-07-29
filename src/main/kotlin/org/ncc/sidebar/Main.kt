@@ -7,6 +7,8 @@ import net.megavex.scoreboardlibrary.api.noop.NoopScoreboardLibrary
 import org.bukkit.Bukkit
 import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
+import org.ncc.sidebar.Tasks.SaveDataTaskManager
+import org.ncc.sidebar.Tasks.SidebarUpdateTasks
 
 
 class Main : JavaPlugin(), Listener {
@@ -31,7 +33,8 @@ class Main : JavaPlugin(), Listener {
             // 没有数据包适配器时退化为空操作库，防止插件崩溃
             // 使用 NoopScoreboardLibrary 避免直接抛异常导致插件加载失败
             sbLib = NoopScoreboardLibrary()
-            logger.warning("No packet adapter available, falling back to noop library.\n" + e.message)
+            logger.warning("No packet adapter available, falling back to noop library.\n" +
+                    "Check whether game version is too old or too new.")
         }
         configManager = ConfigManager()
         configManager!!.initConfig()
@@ -43,13 +46,18 @@ class Main : JavaPlugin(), Listener {
         Bukkit.getPluginManager().registerEvents(EventManager(), this)
         Bukkit.getPluginCommand("sidebar")?.setExecutor(Command())
 
+        SaveDataTaskManager.start()
+        SidebarUpdateTasks.start()
+
     }
 
     // 插件禁用
     override fun onDisable() {
-        sidebarManager!!.onPluginClose()
-        configManager!!.closeConfigResource()
-        configManager!!.closeDataResource()
+        SaveDataTaskManager.close()
+        SidebarUpdateTasks.close()
+        sidebarManager!!.cleanSidebarResources()
+        configManager!!.cleanConfigResource()
+        configManager!!.cleanDataResource()
         sbLib!!.close()
     }
 

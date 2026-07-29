@@ -33,7 +33,6 @@ class ConfigManager {
 
     val animationFile: File = File(Main.instance!!.dataFolder, "animation.yml")
     lateinit var animationConfig: FileConfiguration
-    lateinit var animationSection: ConfigurationSection
     val defaultAnimationLines = listOf(
         "<gradient:#0091FF:#F13ABC><bold>Default Animation</bold></gradient>",
         "<gradient:#40AFFF:#FF80E0><bold>Default Animation</bold></gradient>",
@@ -51,12 +50,12 @@ class ConfigManager {
     val sidebarFactoryMap = mutableMapOf<String, SidebarFactory>()
     val descriptionMap = mutableMapOf<String, String>()
 
-    //TODO complete it
     var playerNameSidebarNameMap = mutableMapOf<String, String>()
     val playerState = mutableMapOf<OfflinePlayer, Boolean>()
 
     // 数据自动保存间隔（分钟）
     var dataSaveIntervalMin = 10
+    var isDebugMode = false
 
     lateinit var sidebarSection: ConfigurationSection
 
@@ -72,6 +71,10 @@ class ConfigManager {
         }
         val tempConf: FileConfiguration = YamlConfiguration.loadConfiguration(configFile)
         // 配置项不存在时填入默认值
+        if (tempConf.get("debug") == null) {
+            tempConf.set("debug", isDebugMode)
+            isConfigModified = true
+        }
         if (tempConf.get("data.save-interval") == null) {
             tempConf.set("data.save-interval", dataSaveIntervalMin)
             tempConf.setComments("data.save-interval", listOf("单位 分钟", "玩家数据的保存时间"))
@@ -102,6 +105,7 @@ class ConfigManager {
         if (tempAniConf.get("animation") == null) {
             tempAniConf.set("animation.default.lines", defaultAnimationLines)
             tempAniConf.set("animation.default.update-interval-ms", defaultAnimationUpdateIntervalMs)
+            tempAniConf.setComments("animation.default.update-interval-ms", listOf("单位 毫秒", "不可小于5ms."))
             isAnimationModified = true
         }
         if (isAnimationModified) {
@@ -113,7 +117,13 @@ class ConfigManager {
     // 加载配置
     fun loadConfig() {
         config = YamlConfiguration.loadConfiguration(configFile)
+        isDebugMode = config.getBoolean("debug", false)
         defaultSidebarSelection = config.getString("first-join.defaultsidebar", defaultSidebarSelection)!!
+        dataSaveIntervalMin = if (config.getInt(
+                "data.save-interval",
+                dataSaveIntervalMin
+            ) <= 0
+        ) 1 else config.getInt("data.save-interval", dataSaveIntervalMin)
         animationConfig = YamlConfiguration.loadConfiguration(animationFile)
         // animation.yml 缺少 animation 段视为致命错误，直接关闭插件
         if (animationConfig.getConfigurationSection("animation") == null) {
@@ -121,12 +131,12 @@ class ConfigManager {
             Bukkit.getPluginManager().disablePlugin(Main.instance!!)
             return
         }
-        animationSection = animationConfig.getConfigurationSection("animation")!!
     }
 
     // 重载配置
     fun reloadConfig() {
-        closeConfigResource()
+        cleanConfigResource()
+        Main.sidebarManager!!.cleanSidebarResources()
         initConfig()
         loadConfig()
         getSidebar(config, Main.instance!!.logger)
@@ -142,7 +152,7 @@ class ConfigManager {
                 continue
             }
             // 缺少标题、行或更新间隔则为无效配置
-            if (subSection.get("title") == null || subSection.get("lines") == null || subSection.get("update-interval") == null) {
+            if (subSection.get("title") == null || subSection.get("lines") == null) {
                 log.warning("Sidebar $key is invalid")
                 continue
             }
@@ -158,8 +168,17 @@ class ConfigManager {
             val factory = SidebarFactory(title, line)
             sidebarFactoryMap[key] = factory
             // 静态 Sidebar 可预先构建全局实例，避免为每个玩家重复创建
-            if (Main.sidebarManager!!.isSimpleSidebar(line)) Main.sidebarManager!!.simpleSidebarMap[key] =
-                factory.buildSidebar()
+            val isSimple = Main.sidebarManager!!.isSimpleSidebar(line)
+            if (isDebugMode) {
+                println(
+                    "[DEBUG] getSidebar key=$key isSimple=$isSimple hasAnimation=${
+                        Main.sidebarManager!!.hasAnimatedLine(
+                            line.joinToString()
+                        )
+                    } lines=${line}"
+                )
+            }
+            if (isSimple) Main.sidebarManager!!.simpleSidebarMap[key] = factory.buildSidebar()
 
             descriptionMap[key] = description
         }
@@ -168,7 +187,7 @@ class ConfigManager {
     fun getAnimationLines(section: String): List<String> {
         // animation.yml 路径结构: animation.<动画名>.lines，需带上 animation. 前缀定位
         val detailedAnimation = animationConfig.getConfigurationSection("animation.$section")!!
-        if (detailedAnimation.getConfigurationSection("lines") == null) {
+        if (detailedAnimation.getStringList("lines").isEmpty()) {
             Main.instance!!.logger.warning("animation.$section is invalid,please check config.yml and animation.yml .")
             return listOf("<red><bold>Invalid.")
         }
@@ -180,13 +199,13 @@ class ConfigManager {
     }
 
     // 释放配置资源
-    fun closeConfigResource() {
+    fun cleanConfigResource() {
         descriptionMap.clear()
         sidebarFactoryMap.clear()
     }
 
     // 释放数据资源
-    fun closeDataResource() {
+    fun cleanDataResource() {
         playerNameSidebarNameMap.clear()
     }
 

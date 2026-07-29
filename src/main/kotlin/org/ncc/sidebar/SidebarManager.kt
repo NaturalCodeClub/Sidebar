@@ -5,6 +5,7 @@ import net.megavex.scoreboardlibrary.api.sidebar.Sidebar
 import net.megavex.scoreboardlibrary.api.sidebar.component.ComponentSidebarLayout
 import net.megavex.scoreboardlibrary.api.sidebar.component.animation.SidebarAnimation
 import org.bukkit.entity.Player
+import java.util.concurrent.ConcurrentHashMap
 
 class SidebarManager {
     // 管理 Sidebar 实例与状态
@@ -16,10 +17,10 @@ class SidebarManager {
     val simpleSidebarMap = mutableMapOf<String, Sidebar>()
 
     // 跟踪所有动画实例，插件关闭时统一停止，防止后台线程泄漏
-    val animationNameMap = mutableMapOf<String, SidebarAnimation<Component>>()
+    val animationNameMap = ConcurrentHashMap<String, SidebarAnimation<Component>>()
 
     // 记录使用该动画的所有 Sidebar，以便动画帧更新时批量推送到对应玩家的显示
-    val animationDataMap = mutableMapOf<SidebarAnimation<Component>, AnimationData>()
+    val animationDataMap = ConcurrentHashMap<SidebarAnimation<Component>, AnimationData>()
 
     private val ANIMATION_REGEX = Regex("\\{animation:.*?}")
     private val PAPI_REGEX = Regex("%.*?%")
@@ -58,14 +59,16 @@ class SidebarManager {
     }
 
     // 插件关闭时清理所有 Sidebar，避免玩家退出后残留引用导致内存泄漏
-    fun onPluginClose() {
+    fun cleanSidebarResources() {
         playerNormalSidebarMap.clear()
         simpleSidebarMap.clear()
+        animationNameMap.clear()
+        animationDataMap.clear()
     }
 
 
     data class AnimationData(
-        val includedSidebars: MutableMap<ComponentSidebarLayout, Sidebar>,
+        val includedSidebars: ConcurrentHashMap<ComponentSidebarLayout, Sidebar>,
         val updateIntervalMs: Int
     )
 
