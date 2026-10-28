@@ -37,10 +37,10 @@ class EventManager : Listener {
         val sidebar = sidebarFactory!!.buildSidebar(player)
         sidebar.addPlayer(player)
         Main.sidebarManager!!.playerNormalSidebarMap[player] = sidebar
-        Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[player.name]]!!.addPlayerSidebar(
-            player,
-            sidebar
-        )
+//        Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[player.name]]!!.addPlayerSidebar(
+//            player,
+//            sidebar
+//        )
     }
 
     @EventHandler
@@ -60,9 +60,9 @@ class EventManager : Listener {
         val sidebar = Main.sidebarManager!!.playerNormalSidebarMap[player]!!
         Main.sidebarManager!!.playerNormalSidebarMap.remove(player)
         sidebar.removePlayer(player)
-        Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[player.name]]!!.removePlayerSidebar(
-            player,
-            sidebar
-        )
+//        Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[player.name]]!!.removePlayerSidebar(
+//            player,
+//            sidebar
+//        )
     }
 }

@@ -14,8 +14,8 @@ class SidebarFactory(
     val title: String,
     val lines: List<String>
 ) {
-    // 创建和管理 Sidebar 实例
-    val playerSidebarMap = mutableMapOf<Player, Sidebar>()
+//    // 创建和管理 Sidebar 实例
+//    val playerSidebarMap = mutableMapOf<Player, Sidebar>()
 
     // 带捕获组的版本：groupValues[1] 可提取动画名，用于按名查找配置
     private val ANIMATION_REGEX = Regex("\\{animation:(.*?)}")
@@ -183,9 +183,9 @@ class SidebarFactory(
         return animatedLines
     }
 
-    // 记录玩家 Sidebar
-    fun addPlayerSidebar(player: Player, Sidebar: Sidebar) = playerSidebarMap.put(player, Sidebar)
-
-    // 移除玩家 Sidebar
-    fun removePlayerSidebar(player: Player, Sidebar: Sidebar) = playerSidebarMap.remove(player, Sidebar)
+//    // 记录玩家 Sidebar
+//    fun addPlayerSidebar(player: Player, Sidebar: Sidebar) = playerSidebarMap.put(player, Sidebar)
+//
+//    // 移除玩家 Sidebar
+//    fun removePlayerSidebar(player: Player, Sidebar: Sidebar) = playerSidebarMap.remove(player, Sidebar)
 }

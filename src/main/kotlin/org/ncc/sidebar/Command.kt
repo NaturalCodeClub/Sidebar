@@ -9,7 +9,7 @@ import org.bukkit.entity.Player
 class Command : TabExecutor {
     // /sidebar 命令处理器
 
-    //TODO add configuration in lang.yml soon
+    //TODO add configuration in lang.yml soon - priority extremely low.
     val helpList = listOf(
         "<color:#55cdfc>/sidebar reload</color> <gray>-</gray> <color:#f5abb9>重载配置文件</color>",
         "<color:#55cdfc>/sidebar help</color> <gray>-</gray> <color:#f5abb9>展示帮助</color>",
@@ -31,7 +31,7 @@ class Command : TabExecutor {
                     sender.sendMessage("重载 config.yml 成功")
                     return true
                 }
-                //TODO put it in lang.yml
+                //TODO put it in lang.yml - priority extremely low.
                 sender.sendMessage(Main.miniMessage.deserialize("<red>你没有权限"))
             }
 
@@ -56,11 +56,11 @@ class Command : TabExecutor {
                                 sender
                             )
                         sidebar.addPlayer(sender)
-                        Main.sidebarManager!!.playerNormalSidebarMap.put(sender, sidebar)
-                        Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[sender.name]]!!.addPlayerSidebar(
-                            sender,
-                            sidebar
-                        )
+                        Main.sidebarManager!!.playerNormalSidebarMap[sender] = sidebar
+//                        Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[sender.name]]!!.addPlayerSidebar(
+//                            sender,
+//                            sidebar
+//                        )
                     }
 
                     sender.sendMessage("Sidebar 调整为 开 ")
@@ -72,10 +72,10 @@ class Command : TabExecutor {
                         Main.sidebarManager!!.simpleSidebarMap[sidebarName]?.removePlayer(sender)
                     } else {
                         Main.sidebarManager!!.playerNormalSidebarMap[sender]?.removePlayer(sender)
-                        Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[sender.name]]!!.removePlayerSidebar(
-                            sender,
-                            Main.sidebarManager!!.playerNormalSidebarMap[sender]!!
-                        )
+//                        Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[sender.name]]!!.removePlayerSidebar(
+//                            sender,
+//                            Main.sidebarManager!!.playerNormalSidebarMap[sender]!!
+//                        )
                     }
 
                     sender.sendMessage("Sidebar 调整为 关 ")
@@ -107,10 +107,10 @@ class Command : TabExecutor {
                         Main.sidebarManager!!.simpleSidebarMap[sidebarName]?.removePlayer(sender)
                     } else {
                         Main.sidebarManager!!.playerNormalSidebarMap[sender]?.removePlayer(sender)
-                        Main.configManager!!.sidebarFactoryMap[sidebarName]!!.removePlayerSidebar(
-                            sender,
-                            Main.sidebarManager!!.playerNormalSidebarMap[sender]!!
-                        )
+//                        Main.configManager!!.sidebarFactoryMap[sidebarName]!!.removePlayerSidebar(
+//                            sender,
+//                            Main.sidebarManager!!.playerNormalSidebarMap[sender]!!
+//                        )
                     }
                     // 再添加新 Sidebar
                     Main.configManager!!.playerNameSidebarNameMap[sender.name] = array[1]
@@ -121,10 +121,10 @@ class Command : TabExecutor {
                         val sidebar = Main.configManager!!.sidebarFactoryMap[array[1]]!!.buildSidebar(sender)
                         sidebar.addPlayer(sender)
                         Main.sidebarManager!!.playerNormalSidebarMap[sender] = sidebar
-                        Main.configManager!!.sidebarFactoryMap[sidebarName]!!.addPlayerSidebar(
-                            sender,
-                            Main.sidebarManager!!.playerNormalSidebarMap[sender]!!
-                        )
+//                        Main.configManager!!.sidebarFactoryMap[sidebarName]!!.addPlayerSidebar(
+//                            sender,
+//                            Main.sidebarManager!!.playerNormalSidebarMap[sender]!!
+//                        )
                     }
                 }
                 sender.sendMessage(Main.miniMessage.deserialize("<green>更改成功"))
