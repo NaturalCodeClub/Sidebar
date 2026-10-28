@@ -224,9 +224,7 @@ class ConfigManager {
         val dataVar = gson.fromJson(dataFile.readText(Charsets.UTF_8), Data::class.java)
         playerNameSidebarNameMap = dataVar.playerNameSidebarNameMap
         // 将 JSON 中的 UUID 字符串转换为 OfflinePlayer 对象
-        for ((uuid, state) in dataVar.playerUUIDState) {
-            playerState[Bukkit.getOfflinePlayer(UUID.fromString(uuid))] = state
-        }
+        for ((uuid, state) in dataVar.playerUUIDState) playerState[Bukkit.getOfflinePlayer(UUID.fromString(uuid))] = state
     }
 
     // 保存玩家数据

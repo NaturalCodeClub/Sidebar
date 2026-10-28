@@ -21,7 +21,7 @@ repositories {
 }
 
 dependencies {
-    val scoreboardLibraryVersion = "2.8.1"
+    val scoreboardLibraryVersion = "2.8.3"
     implementation("net.megavex:scoreboard-library-api:$scoreboardLibraryVersion")
     runtimeOnly("net.megavex:scoreboard-library-implementation:$scoreboardLibraryVersion")
     compileOnly("me.clip:placeholderapi:2.11.6")

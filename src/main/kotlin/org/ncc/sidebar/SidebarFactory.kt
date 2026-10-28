@@ -16,6 +16,7 @@ class SidebarFactory(
 ) {
     // 创建和管理 Sidebar 实例
     val playerSidebarMap = mutableMapOf<Player, Sidebar>()
+
     // 带捕获组的版本：groupValues[1] 可提取动画名，用于按名查找配置
     private val ANIMATION_REGEX = Regex("\\{animation:(.*?)}")
 
