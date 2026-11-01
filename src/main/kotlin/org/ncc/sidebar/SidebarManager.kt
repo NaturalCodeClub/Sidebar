@@ -11,10 +11,10 @@ class SidebarManager {
     // 管理 Sidebar 实例与状态
 
     // 玩家独立 Sidebar
-    val playerNormalSidebarMap = mutableMapOf<Player, Sidebar>()
+    val playerNormalSidebarMap = ConcurrentHashMap<Player, Sidebar>()
 
     // 全局静态 Sidebar
-    val simpleSidebarMap = mutableMapOf<String, Sidebar>()
+    val simpleSidebarMap = ConcurrentHashMap<String, Sidebar>()
 
     // 跟踪所有动画实例，插件关闭时统一停止，防止后台线程泄漏
     val animationNameMap = ConcurrentHashMap<String, SidebarAnimation<Component>>()

@@ -8,6 +8,7 @@ import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.configuration.file.YamlConfiguration
 import java.io.File
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Logger
 
 class ConfigManager {
@@ -16,8 +17,8 @@ class ConfigManager {
 
     // 玩家数据模型
     data class Data(
-        var playerNameSidebarNameMap: MutableMap<String, String>,
-        var playerUUIDState: MutableMap<String, Boolean>
+        var playerNameSidebarNameMap: ConcurrentHashMap<String, String>,
+        var playerUUIDState: ConcurrentHashMap<String, Boolean>
     )
 
 
@@ -50,8 +51,8 @@ class ConfigManager {
     val sidebarFactoryMap = mutableMapOf<String, SidebarFactory>()
     val descriptionMap = mutableMapOf<String, String>()
 
-    var playerNameSidebarNameMap = mutableMapOf<String, String>()
-    val playerState = mutableMapOf<OfflinePlayer, Boolean>()
+    var playerNameSidebarNameMap = ConcurrentHashMap<String, String>()
+    val playerState = ConcurrentHashMap<OfflinePlayer, Boolean>()
 
     // 数据自动保存间隔（分钟）
     var dataSaveIntervalMin = 10
@@ -230,7 +231,7 @@ class ConfigManager {
     // 保存玩家数据
     // 保存时将 OfflinePlayer 映射为 UUID 字符串以便 JSON 序列化
     fun saveData() {
-        val playerUUIDState = mutableMapOf<String, Boolean>()
+        val playerUUIDState = ConcurrentHashMap<String, Boolean>()
         for ((player, state) in playerState) {
             playerUUIDState[player.uniqueId.toString()] = state
         }
