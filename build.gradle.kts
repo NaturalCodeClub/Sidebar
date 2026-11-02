@@ -21,6 +21,8 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":api"))
+
     val scoreboardLibraryVersion = "2.8.3"
     implementation("net.megavex:scoreboard-library-api:$scoreboardLibraryVersion")
     runtimeOnly("net.megavex:scoreboard-library-implementation:$scoreboardLibraryVersion")

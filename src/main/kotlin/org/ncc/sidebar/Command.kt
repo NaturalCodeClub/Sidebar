@@ -1,10 +1,11 @@
 package org.ncc.sidebar
 
-import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.command.TabExecutor
 import org.bukkit.entity.Player
+import org.ncc.sidebar.api.event.SidebarSwitchEvent
+import org.ncc.sidebar.service.SidebarService
 
 class Command : TabExecutor {
     // /sidebar 命令处理器
@@ -26,13 +27,14 @@ class Command : TabExecutor {
         when (array[0]) {
             // 重载配置文件
             "reload" -> {
-                if (sender.hasPermission("sidebar.reload")) {
-                    Main.configManager!!.reloadConfig()
-                    sender.sendMessage("重载 config.yml 成功")
+                if (!sender.hasPermission("sidebar.reload")) {
+                    sender.sendMessage(Main.miniMessage.deserialize("<red>你没有权限"))
                     return true
                 }
-                //TODO put it in lang.yml - priority extremely low.
-                sender.sendMessage(Main.miniMessage.deserialize("<red>你没有权限"))
+                Main.sidebarService.reload { success ->
+                    sender.sendMessage(if (success) "重载 config.yml 成功" else "重载 config.yml 失败")
+                }
+                return true
             }
 
             // 切换 Sidebar 开关
@@ -41,46 +43,11 @@ class Command : TabExecutor {
                     sender.sendMessage("你不是玩家")
                     return true
                 }
-                // 翻转当前玩家的 Sidebar 开关状态
-                // playerState 同时以 Player 和 OfflinePlayer 为键，前者用于运行时查询，后者用于 JSON 持久化
-                Main.configManager!!.playerState[Bukkit.getOfflinePlayer(sender.uniqueId)] =
-                    !Main.configManager!!.playerState[sender]!!
-                if (Main.configManager!!.playerState[Bukkit.getOfflinePlayer(sender.uniqueId)]!!) {
-                    // 开启：根据 Sidebar 类型（静态/普通）添加玩家
-                    if (Main.sidebarManager!!.simpleSidebarMap.containsKey(Main.configManager!!.playerNameSidebarNameMap[sender.name])) {
-                        val sidebarName = Main.configManager!!.playerNameSidebarNameMap[sender.name]
-                        Main.sidebarManager!!.simpleSidebarMap[sidebarName]?.addPlayer(sender)
-                    } else {
-                        val sidebar =
-                            Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[sender.name]]!!.buildSidebar(
-                                sender
-                            )
-                        sidebar.addPlayer(sender)
-                        Main.sidebarManager!!.playerNormalSidebarMap[sender] = sidebar
-//                        Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[sender.name]]!!.addPlayerSidebar(
-//                            sender,
-//                            sidebar
-//                        )
-                    }
-
-                    sender.sendMessage("Sidebar 调整为 开 ")
-                    return true
-                } else {
-                    // 关闭：从对应 Sidebar 中移除玩家
-                    if (Main.sidebarManager!!.simpleSidebarMap.containsKey(Main.configManager!!.playerNameSidebarNameMap[sender.name])) {
-                        val sidebarName = Main.configManager!!.playerNameSidebarNameMap[sender.name]
-                        Main.sidebarManager!!.simpleSidebarMap[sidebarName]?.removePlayer(sender)
-                    } else {
-                        Main.sidebarManager!!.playerNormalSidebarMap[sender]?.removePlayer(sender)
-//                        Main.configManager!!.sidebarFactoryMap[Main.configManager!!.playerNameSidebarNameMap[sender.name]]!!.removePlayerSidebar(
-//                            sender,
-//                            Main.sidebarManager!!.playerNormalSidebarMap[sender]!!
-//                        )
-                    }
-
-                    sender.sendMessage("Sidebar 调整为 关 ")
-                    return true
-                }
+                val player = sender
+                Main.sidebarService.toggle(player, { state ->
+                    player.sendMessage(if (state) "Sidebar 调整为 开 " else "Sidebar 调整为 关 ")
+                })
+                return true
             }
 
             // 切换 Sidebar
@@ -94,47 +61,28 @@ class Command : TabExecutor {
                     sender.sendMessage(Main.miniMessage.deserialize(helpList.joinToString("\n")))
                     return true
                 }
-                if (array[1] !in Main.configManager!!.sidebarFactoryMap.keys) {
-                    sender.sendMessage("你所指定的Sidebar不存在")
-                    return true
-                }
-                // 玩家开启了 Sidebar 才需要切换显示
-                if (Main.configManager!!.playerState[sender]!!) {
-                    var sidebarName = Main.configManager!!.playerNameSidebarNameMap[sender.name]
-                    // 先移除旧 Sidebar
-                    if (Main.sidebarManager!!.simpleSidebarMap.containsKey(sidebarName)) {
-
-                        Main.sidebarManager!!.simpleSidebarMap[sidebarName]?.removePlayer(sender)
-                    } else {
-                        Main.sidebarManager!!.playerNormalSidebarMap[sender]?.removePlayer(sender)
-//                        Main.configManager!!.sidebarFactoryMap[sidebarName]!!.removePlayerSidebar(
-//                            sender,
-//                            Main.sidebarManager!!.playerNormalSidebarMap[sender]!!
-//                        )
+                val player = sender
+                Main.sidebarService.select(player, array[1], SidebarSwitchEvent.Cause.COMMAND, { outcome ->
+                    val message = when (outcome) {
+                        SidebarService.SelectOutcome.SUCCESS -> "<green>更改成功"
+                        SidebarService.SelectOutcome.SAME -> "<green>更改成功"
+                        SidebarService.SelectOutcome.DISABLED_SAVED -> "<green>已保存，开启后生效"
+                        SidebarService.SelectOutcome.NOT_FOUND -> "你所指定的Sidebar不存在"
+                        SidebarService.SelectOutcome.NO_PERMISSION -> "<red>你没有权限"
+                        SidebarService.SelectOutcome.UNAVAILABLE -> "<red>该Sidebar当前不可用"
+                        SidebarService.SelectOutcome.CANCELLED -> "<red>切换已被取消"
+                        SidebarService.SelectOutcome.FAILED -> "<red>切换失败"
                     }
-                    // 再添加新 Sidebar
-                    Main.configManager!!.playerNameSidebarNameMap[sender.name] = array[1]
-                    sidebarName = array[1]
-                    if (Main.sidebarManager!!.simpleSidebarMap.containsKey(array[1])) {
-                        Main.sidebarManager!!.simpleSidebarMap[array[1]]?.addPlayer(sender)
-                    } else {
-                        val sidebar = Main.configManager!!.sidebarFactoryMap[array[1]]!!.buildSidebar(sender)
-                        sidebar.addPlayer(sender)
-                        Main.sidebarManager!!.playerNormalSidebarMap[sender] = sidebar
-//                        Main.configManager!!.sidebarFactoryMap[sidebarName]!!.addPlayerSidebar(
-//                            sender,
-//                            Main.sidebarManager!!.playerNormalSidebarMap[sender]!!
-//                        )
-                    }
-                }
-                sender.sendMessage(Main.miniMessage.deserialize("<green>更改成功"))
+                    player.sendMessage(Main.miniMessage.deserialize(message))
+                })
+                return true
             }
 
             // 列出所有 Sidebar
             "list" -> {
-                val list = mutableListOf<String>()
-                for ((name, des) in Main.configManager!!.descriptionMap) {
-                    list.add("<color:#55cdfc>$name</color> <gray>-</gray> <color:#f5abb9>$des</color>")
+                val list = Main.sidebarService.visibleProviders(sender).map {
+                    "<color:#55cdfc>" + it.id + "</color> <gray>-</gray> <color:#f5abb9>" +
+                        it.provider.description() + "</color>"
                 }
                 sender.sendMessage(Main.miniMessage.deserialize(list.joinToString("\n")))
                 return true
@@ -145,15 +93,14 @@ class Command : TabExecutor {
                 return true
             }
         }
-        return true
     }
 
     // Tab 补全
-    override fun onTabComplete(p0: CommandSender, p1: Command, p2: String, array: Array<out String>): List<String?>? {
+    override fun onTabComplete(p0: CommandSender, p1: Command, p2: String, array: Array<out String>): List<String>? {
         if (array.size == 1) return listOf("reload", "help", "list", "toggle", "switch")
-        if (array.size == 2 && array[0] == "switch") return Main.configManager!!.sidebarFactoryMap.keys.toList()
+        if (array.size == 2 && array[0] == "switch") {
+            return Main.sidebarService.visibleProviders(p0).map { it.id }
+        }
         return null
     }
-
-
 }

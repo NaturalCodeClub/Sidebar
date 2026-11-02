@@ -9,8 +9,8 @@ class SaveDataTaskManager {
         private val scheduler = Executors.newSingleThreadScheduledExecutor()
         fun start(){
             scheduler.scheduleAtFixedRate({
-                Main.configManager!!.saveData()
-            },0L,Main.configManager!!.dataSaveIntervalMin.toLong(),TimeUnit.MINUTES)
+                Main.configManager.saveData()
+            },0L,Main.configManager.dataSaveIntervalMin.toLong(),TimeUnit.MINUTES)
         }
         fun close(){
             scheduler.shutdownNow()
