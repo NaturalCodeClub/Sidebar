@@ -31,6 +31,7 @@ class Command : TabExecutor {
                     sender.sendMessage(Main.miniMessage.deserialize("<red>你没有权限"))
                     return true
                 }
+                // 重载在串行线程完成后再回调，此时内置 provider 已经重建
                 Main.sidebarService.reload { success ->
                     sender.sendMessage(if (success) "重载 config.yml 成功" else "重载 config.yml 失败")
                 }

@@ -57,6 +57,7 @@ class Main : JavaPlugin() {
         configManager.getSidebar(config, logger)
         sidebarService.registerBuiltIns()
 
+        // 先注册内置 provider 再暴露服务，扩展在 onEnable 拿到服务时内置侧栏已可用
         Bukkit.getServicesManager().register(SidebarApi::class.java, sidebarService, this, ServicePriority.Normal)
         Bukkit.getPluginManager().registerEvents(EventManager(), this)
         Bukkit.getPluginCommand("sidebar")?.setExecutor(Command())

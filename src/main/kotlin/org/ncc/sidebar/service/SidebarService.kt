@@ -49,6 +49,7 @@ class SidebarService(
 
     override fun register(owner: Plugin, provider: SidebarProvider) {
         val bareId = provider.id()
+        // 扩展 id 统一加插件名前缀，避免不同插件注册同名侧栏互相覆盖
         val displayId = owner.name.lowercase() + ":" + bareId
         val previous = registry.putIfAbsent(displayId, Entry(displayId, bareId, provider, null))
         if (previous != null) {
@@ -60,6 +61,7 @@ class SidebarService(
         val entry = resolve(id) ?: return false
         if (!registry.remove(entry.displayId, entry)) return false
 
+        // 迁移回串行线程：旧 provider 在扩展 onDisable 后可能已失效，hide 失败只记日志
         dispatcher.execute {
             val fallback = resolve(configManager.defaultSidebarSelection)
             if (fallback != null) {
@@ -108,6 +110,7 @@ class SidebarService(
         cause: SidebarSwitchEvent.Cause,
         notify: ((SelectOutcome) -> Unit)? = null
     ) {
+        // 命令与 API 可能来自任意线程，统一投递到串行线程再碰库对象
         dispatcher.execute { selectInternal(player, id, cause, notify) }
     }
 
@@ -137,6 +140,7 @@ class SidebarService(
         dispatcher.execute {
             if (!player.isOnline) return@execute
             val uuidKey = player.uniqueId.toString()
+            // 新玩家缺省开启；已有数据保持原值
             configManager.playerState.putIfAbsent(uuidKey, true)
             configManager.playerUUIDSidebarNameMap.putIfAbsent(uuidKey, configManager.defaultSidebarSelection)
             if (configManager.playerState[uuidKey] != true) return@execute
@@ -158,6 +162,7 @@ class SidebarService(
     fun reload(notify: ((Boolean) -> Unit)? = null) {
         dispatcher.execute {
             try {
+                // 先撤下并关闭旧的内置 provider，再重建，避免旧 Sidebar 残留动画缓存
                 for (player in Bukkit.getOnlinePlayers()) {
                     val activeId = activeByUuid[player.uniqueId] ?: continue
                     val entry = registry[activeId] ?: continue
@@ -178,6 +183,7 @@ class SidebarService(
                         configManager.playerUUIDSidebarNameMap[uuidKey] ?: configManager.defaultSidebarSelection
                     val selected = resolve(selectedId)
                     val entry = selected ?: resolve(configManager.defaultSidebarSelection) ?: continue
+                    // 选中项已被删除时按回退通知，否则按重载通知，方便扩展同步自己的界面
                     fireSwitch(
                         player,
                         null,
@@ -208,6 +214,7 @@ class SidebarService(
             .map { ProviderView(it.displayId, it.provider) }
 
     fun shutdown() {
+        // 先撤显示再关闭 provider，避免关闭瞬间仍有侧栏指向已释放的实例
         for (player in Bukkit.getOnlinePlayers()) {
             val activeId = activeByUuid[player.uniqueId] ?: continue
             val entry = registry[activeId] ?: continue
@@ -231,6 +238,7 @@ class SidebarService(
         notify: ((SelectOutcome) -> Unit)?
     ) {
         if (!player.isOnline) return
+        // 先校验存在性与可用性，再处理关闭状态，避免把无效 id 写进玩家数据
         val entry = resolve(id)
         if (entry == null) {
             notify?.invoke(SelectOutcome.NOT_FOUND)
@@ -274,6 +282,7 @@ class SidebarService(
         val oldId = activeByUuid[uuid]
         if (oldId == entry.displayId) return true
         val old = oldId?.let { registry[it] }
+        // 必须先撤下旧显示再挂新显示，否则 packet 侧栏与 objective 侧栏会抢同一个 sidebar 槽
         if (old != null) {
             hideEntry(player, old)
             activeByUuid.remove(uuid)
@@ -286,6 +295,7 @@ class SidebarService(
             plugin.logger.warning(
                 "Sidebar provider " + entry.displayId + " failed to show for " + player.name + ": " + e.message
             )
+            // 新 provider 显示失败时回滚旧 provider，保持玩家原有显示
             if (old != null) {
                 try {
                     old.provider.show(player)
@@ -324,6 +334,7 @@ class SidebarService(
     ): Boolean {
         val event = SidebarSwitchEvent(player, fromId, toId, cause)
         Bukkit.getPluginManager().callEvent(event)
+        // 只有命令与 API 允许监听器取消；回退/重载/注销若可取消会把玩家留在不一致状态
         if (cause == SidebarSwitchEvent.Cause.COMMAND || cause == SidebarSwitchEvent.Cause.API) {
             return !event.isCancelled
         }
@@ -332,6 +343,7 @@ class SidebarService(
 
     private fun resolve(id: String): Entry? {
         registry[id]?.let { return it }
+        // 内置侧栏用裸 id；扩展只接受全名，或唯一匹配的裸 id
         if (':' in id) return null
         val matches = registry.values.filter { it.bareId == id }
         return if (matches.size == 1) matches[0] else null
@@ -340,6 +352,7 @@ class SidebarService(
     private fun canSelect(sender: CommandSender, provider: SidebarProvider): Boolean {
         val permission = provider.permission()
         if (permission != null && !sender.hasPermission(permission)) return false
+        // 控制台没有"当前世界/状态"概念，可用性判断只对玩家生效
         return sender !is Player || provider.isAvailable(sender)
     }
 }

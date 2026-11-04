@@ -6,6 +6,7 @@ import org.ncc.sidebar.Main
 
 class SidebarUpdateTasks {
     companion object {
+        // 普通 map 即可：所有读写都在同一条串行调度线程上
         private val cooldownTimestampMap = mutableMapOf<SidebarAnimation<Component>, Long>()
         private var cancelSchedule: (() -> Unit)? = null
 

@@ -8,6 +8,7 @@ class SerialDispatcher(private val plugin: JavaPlugin) {
 
     fun execute(task: () -> Unit) {
         if (!isFolia) {
+            // 已在主线程就直接执行，避免命令/事件回调白等一个 tick
             if (Bukkit.isPrimaryThread()) task() else Bukkit.getScheduler().runTask(plugin, Runnable { task() })
             return
         }
@@ -19,6 +20,7 @@ class SerialDispatcher(private val plugin: JavaPlugin) {
             execute(task)
             return
         }
+        // Folia 下玩家实体带有 region 归属，必须交给实体调度器在自己线程执行
         player.scheduler.run(plugin, { _ -> task() }, null)
     }
 

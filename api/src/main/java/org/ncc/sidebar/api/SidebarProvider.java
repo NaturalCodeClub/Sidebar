@@ -34,6 +34,7 @@ public interface SidebarProvider {
 
     /**
      * 开始显示，必须幂等。
+     * 核心保证调用前上一个 provider 已 hide，同一玩家同一时刻只有一个 provider 在显示。
      */
     void show(Player player);
 

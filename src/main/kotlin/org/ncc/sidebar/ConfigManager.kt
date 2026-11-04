@@ -134,6 +134,7 @@ class ConfigManager {
     }
 
     // 重载配置
+    // 只重新解析配置；在线玩家的显示由 SidebarService.reload 负责重建
     fun reloadConfig() {
         cleanConfigResource()
         initConfig()
@@ -208,6 +209,7 @@ class ConfigManager {
     // 加载玩家数据，JSON 的 key 是 UUID 字符串
     fun loadData() {
         if (dataFile.length() == 0L) return
+        // 解析失败按空数据处理，避免损坏的 data.json 卡死插件启动
         val dataVar = try {
             gson.fromJson(dataFile.readText(Charsets.UTF_8), Data::class.java)
         } catch (e: Exception) {
@@ -221,6 +223,7 @@ class ConfigManager {
 
     // 保存玩家数据，两个 map 的 key 都是 UUID 字符串
     fun saveData() {
+        // 拷贝一份再序列化，防止定时保存线程与串行线程同时写 map 造成错乱
         val dataVar = Data(ConcurrentHashMap(playerUUIDSidebarNameMap), ConcurrentHashMap(playerState))
         val jsonStr = gson.toJson(dataVar)
         dataFile.outputStream().use { it.write(jsonStr.toByteArray(Charsets.UTF_8)) }

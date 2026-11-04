@@ -35,6 +35,7 @@ public interface SidebarApi {
 
     /**
      * 注销 provider。返回是否真的移除了。
+     * 受影响的在线玩家会由核心迁移到默认 provider，调用方无需手动处理。
      */
     boolean unregister(String id);
 
