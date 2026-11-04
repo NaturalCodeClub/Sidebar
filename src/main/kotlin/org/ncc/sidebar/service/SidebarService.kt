@@ -335,10 +335,7 @@ class SidebarService(
         val event = SidebarSwitchEvent(player, fromId, toId, cause)
         Bukkit.getPluginManager().callEvent(event)
         // 只有命令与 API 允许监听器取消；回退/重载/注销若可取消会把玩家留在不一致状态
-        if (cause == SidebarSwitchEvent.Cause.COMMAND || cause == SidebarSwitchEvent.Cause.API) {
-            return !event.isCancelled
-        }
-        return true
+        return !(cause == SidebarSwitchEvent.Cause.COMMAND || cause == SidebarSwitchEvent.Cause.API) || !event.isCancelled
     }
 
     private fun resolve(id: String): Entry? {
